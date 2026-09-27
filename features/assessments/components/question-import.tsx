@@ -1,6 +1,16 @@
 "use client"
+import { Alert } from "@/components/ui/alert"
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import { useState } from "react"
-import { Upload, FileJson, CheckCircle2 } from "lucide-react"
+import { FileJson, CheckCircle2 } from "lucide-react"
 import { PageHeader, Panel, Metric, Badge } from "@/components/shared/ui"
 import { Button } from "@/components/ui/button"
 import {
@@ -116,10 +126,10 @@ export function QuestionImport({ example }: { example: Question[] }) {
               Load example
             </Button>
           </div>
-          <label className="sr-only" htmlFor="question-json">
+          <Label className="sr-only" htmlFor="question-json">
             Question JSON
-          </label>
-          <textarea
+          </Label>
+          <Textarea
             id="question-json"
             className="json-input"
             spellCheck={false}
@@ -131,16 +141,16 @@ export function QuestionImport({ example }: { example: Question[] }) {
             placeholder='[{ "id": "javascript-1", "type": "single", ... }]'
           />
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-            <label className="outline-link cursor-pointer">
-              <Upload size={14} />
-              Upload .json
-              <input
+            <div className="grid min-w-0 gap-2">
+              <Label htmlFor="question-file">Upload .json</Label>
+              <Input
+                id="question-file"
                 type="file"
                 accept=".json,application/json"
-                className="sr-only"
+                className="max-w-full"
                 onChange={(e) => void upload(e.target.files?.[0])}
               />
-            </label>
+            </div>
             <Button onClick={validate}>
               Validate questions
               <CheckCircle2 />
@@ -175,70 +185,79 @@ export function QuestionImport({ example }: { example: Question[] }) {
             </>
           )}
           {issues.length > 0 && (
-            <div role="alert" className="import-errors mt-5">
+            <Alert variant="destructive" className="import-errors mt-5">
               <h3>Validation details</h3>
               <ul>
                 {issues.map((issue, index) => (
                   <li key={index}>{issue}</li>
                 ))}
               </ul>
-            </div>
+            </Alert>
           )}
           {validated && !issues.length && (
             <p className="form-message mt-6">
               All records are valid. Preview only; nothing has been imported.
             </p>
           )}
-          <details className="mt-6 text-xs">
-            <summary className="cursor-pointer">
-              Question format requirements
-            </summary>
-            <p className="muted mt-3 leading-6">
-              Required: id, topic, category, difficulty, type, prompt, options,
-              tags, explanation, estimatedTimeSeconds, active, and version.
-              Choice options include id, text, and correct. Weighted options use
-              quality and weight instead. IDs must be unique; a single-choice
-              question needs exactly one correct option.
-            </p>
-          </details>
+          <Accordion className="mt-6 text-xs">
+            <AccordionItem value="details" className="border-0">
+              <AccordionTrigger className="cursor-pointer">
+                Question format requirements
+              </AccordionTrigger>
+              <AccordionContent>
+                <p className="muted mt-3 leading-6">
+                  Required: id, topic, category, difficulty, type, prompt,
+                  options, tags, explanation, estimatedTimeSeconds, active, and
+                  version. Choice options include id, text, and correct.
+                  Weighted options use quality and weight instead. IDs must be
+                  unique; a single-choice question needs exactly one correct
+                  option.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </Panel>
       </div>
       {validated && valid.length > 0 && (
         <section className="section-space">
           <h2 className="mb-5">Valid question preview</h2>
           {valid.map((question) => (
-            <details className="review-row" key={question.id}>
-              <summary>
-                <span className="flex-1">{question.prompt}</span>
-                <Badge>{question.type}</Badge>
-              </summary>
-              <div className="review-body">
-                <p className="muted">
-                  {question.topic} · {question.difficulty}
-                </p>
-                {question.code && (
-                  <CodeBlock
-                    code={question.code}
-                    language={question.language}
-                  />
-                )}
-                <ul className="mt-4 space-y-2">
-                  {question.options.map((option) => (
-                    <li key={option.id}>
-                      {option.text}{" "}
-                      <Badge>
-                        {"correct" in option
-                          ? option.correct
-                            ? "Correct"
-                            : "Distractor"
-                          : `${option.quality} · ${option.weight}`}
-                      </Badge>
-                    </li>
-                  ))}
-                </ul>
-                <p className="review-explanation">{question.explanation}</p>
-              </div>
-            </details>
+            <Accordion className="review-row" key={question.id}>
+              <AccordionItem value="details" className="border-0">
+                <AccordionTrigger>
+                  <span className="flex-1">{question.prompt}</span>
+                  <Badge>{question.type}</Badge>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="review-body">
+                    <p className="muted">
+                      {question.topic} · {question.difficulty}
+                    </p>
+                    {question.code && (
+                      <CodeBlock
+                        code={question.code}
+                        language={question.language}
+                      />
+                    )}
+                    <ul className="mt-4 space-y-2">
+                      {question.options.map((option) => (
+                        <li key={option.id}>
+                          {option.text}{" "}
+                          <Badge>
+                            {"correct" in option
+                              ? option.correct
+                                ? "Correct"
+                                : "Distractor"
+                              : `${option.quality} · ${option.weight}`}
+                          </Badge>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="review-explanation">{question.explanation}</p>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           ))}
         </section>
       )}

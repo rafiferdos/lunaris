@@ -27,7 +27,7 @@ pnpm dev
 
 ## Ownership and data flow
 
-Thin App Router pages compose `features/*` components. Domain types, question schemas, fixtures, level configuration, calculations, and assessment services live inside `features/assessments`. History, leaderboard, profile, and stats expose their own service boundaries. Shared presentation components live in `components/shared`; the shell and chart components have separate directories. The only generated shadcn primitive lives in `components/ui`.
+Thin App Router pages compose `features/*` components. Domain types, question schemas, fixtures, level configuration, calculations, and assessment services live inside `features/assessments`. History, leaderboard, profile, and stats expose their own service boundaries. Shared presentation components live in `components/shared`; the shell and chart components have separate directories. Official shadcn Base UI Rhea components live in `components/ui`: Select, Input, Textarea, Label, Checkbox, RadioGroup, Switch, ToggleGroup, Tabs, Accordion, AlertDialog, Sidebar (with mobile Sheet), Popover, Tooltip, Card, Badge, Avatar, Progress, Table, Pagination, Alert, Separator, and Skeleton. Shared wrappers compose these primitives; they do not recreate control behavior. Navigation actions use the preset Button with Next.js Link composition.
 
 `assessmentService`, `historyService`, `leaderboardService`, `profileService`, and `statsService` currently use deterministic fixtures. Replace these adapters with API-backed implementations in the backend phase. Completed demo attempts, profile edits, and preferences use a small validated local-storage adapter. Server-rendered fixtures provide hydration-safe initial values; persisted values are applied after hydration.
 

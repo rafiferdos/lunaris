@@ -1,5 +1,9 @@
 "use client"
-import { useState } from "react"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { Toggle } from "@/components/ui/toggle"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { useId, useState } from "react"
 import { useTheme } from "next-themes"
 import Link from "next/link"
 import { Sun, Moon, Monitor, Check } from "lucide-react"
@@ -51,23 +55,28 @@ export function SettingsPage() {
                 <h3>Color mode</h3>
                 <p>Follow your device or set a preference.</p>
               </div>
-              <div className="segmented">
+              <ToggleGroup
+                aria-label="Color mode"
+                value={hydrated && theme ? [theme] : []}
+                onValueChange={(values) => {
+                  if (values[0]) setTheme(values[0])
+                }}
+              >
                 {[
                   { value: "light", icon: Sun },
                   { value: "dark", icon: Moon },
                   { value: "system", icon: Monitor },
                 ].map(({ value, icon: Icon }) => (
-                  <button
+                  <ToggleGroupItem
+                    value={value}
                     key={value}
                     className="flex items-center gap-2 capitalize"
-                    aria-pressed={hydrated && theme === value}
-                    onClick={() => setTheme(value)}
                   >
                     <Icon size={13} />
                     {value}
-                  </button>
+                  </ToggleGroupItem>
                 ))}
-              </div>
+              </ToggleGroup>
             </div>
             <div className="border-b py-5">
               <h3>Color theme</h3>
@@ -76,12 +85,12 @@ export function SettingsPage() {
               </p>
               <div className="palette-options">
                 {palettes.map((palette) => (
-                  <button
+                  <Toggle
                     key={palette.name}
                     className="palette-option"
                     aria-label={`${palette.label} color theme`}
-                    aria-pressed={preferences.palette === palette.name}
-                    onClick={() => update({ palette: palette.name })}
+                    pressed={preferences.palette === palette.name}
+                    onPressedChange={() => update({ palette: palette.name })}
                   >
                     <span
                       className="palette-swatch"
@@ -90,7 +99,7 @@ export function SettingsPage() {
                       }
                     />
                     {palette.label}
-                  </button>
+                  </Toggle>
                 ))}
               </div>
             </div>
@@ -161,11 +170,12 @@ export function SettingsPage() {
                   "nextjs",
                   "communication",
                 ].map((topic) => (
-                  <button
+                  <Toggle
                     key={topic}
-                    className="outline-link capitalize"
-                    aria-pressed={preferences.topics.includes(topic)}
-                    onClick={() =>
+                    variant="outline"
+                    className="capitalize"
+                    pressed={preferences.topics.includes(topic)}
+                    onPressedChange={() =>
                       update({
                         topics: preferences.topics.includes(topic)
                           ? preferences.topics.filter((t) => t !== topic)
@@ -175,7 +185,7 @@ export function SettingsPage() {
                   >
                     {preferences.topics.includes(topic) && <Check size={12} />}{" "}
                     {topic}
-                  </button>
+                  </Toggle>
                 ))}
               </div>
             </div>
@@ -190,9 +200,13 @@ export function SettingsPage() {
               <p className="muted mt-2 mb-6 text-sm">
                 Your next assessment is a chance to learn something useful.
               </p>
-              <Link className="primary-link" href="/assessments">
+              <Button
+                variant="default"
+                nativeButton={false}
+                render={<Link href="/assessments" />}
+              >
                 Explore assessments →
-              </Link>
+              </Button>
             </div>
           </Panel>
           <Panel>
@@ -222,9 +236,13 @@ export function SettingsPage() {
               This is a mock account. No credentials or personal data are sent
               to a server.
             </p>
-            <Link href="/login" className="outline-link">
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={<Link href="/login" />}
+            >
               Leave demo workspace
-            </Link>
+            </Button>
           </Panel>
           <Button
             variant="outline"
@@ -272,20 +290,21 @@ function SettingToggle({
   checked: boolean
   onChange: (value: boolean) => void
 }) {
+  const id = useId()
   return (
-    <label className="setting-row">
-      <span>
-        <span className="font-medium">{label}</span>
-        <span className="muted mt-1 block max-w-sm text-xs">{description}</span>
-      </span>
-      <input
-        className="switch"
-        type="checkbox"
-        role="switch"
-        aria-label={label}
+    <div className="setting-row">
+      <div>
+        <Label htmlFor={id}>{label}</Label>
+        <p id={`${id}-description`} className="muted mt-1 max-w-sm text-xs">
+          {description}
+        </p>
+      </div>
+      <Switch
+        id={id}
+        aria-describedby={`${id}-description`}
         checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
+        onCheckedChange={onChange}
       />
-    </label>
+    </div>
   )
 }

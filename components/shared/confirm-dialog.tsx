@@ -1,6 +1,14 @@
 "use client"
-import { useEffect, useRef } from "react"
-import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog"
 export function ConfirmDialog({
   open,
   onClose,
@@ -16,26 +24,25 @@ export function ConfirmDialog({
   description: string
   confirmLabel?: string
 }) {
-  const ref = useRef<HTMLDialogElement>(null)
-  useEffect(() => {
-    if (open && !ref.current?.open) ref.current?.showModal()
-    if (!open && ref.current?.open) ref.current?.close()
-  }, [open])
   return (
-    <dialog
-      ref={ref}
-      className="modal"
-      onCancel={onClose}
-      aria-labelledby="confirmation-title"
+    <AlertDialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose()
+      }}
     >
-      <h2 id="confirmation-title">{title}</h2>
-      <p>{description}</p>
-      <div className="flex justify-end gap-3">
-        <Button variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button onClick={onConfirm}>{confirmLabel}</Button>
-      </div>
-    </dialog>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm}>
+            {confirmLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }

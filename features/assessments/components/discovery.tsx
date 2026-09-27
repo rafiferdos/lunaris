@@ -1,4 +1,12 @@
 "use client"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { activitySummary } from "@/features/stats/activity"
 import { usePreferences } from "@/features/settings/preferences"
 import { useState } from "react"
@@ -97,9 +105,13 @@ export function Discovery({ topics }: { topics: Topic[] }) {
         title={`Welcome back, ${profile.name.split(" ")[0]}.`}
         description="Make time for your next breakthrough. Where will you focus today?"
         action={
-          <Link href="/stats" className="outline-link">
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<Link href="/stats" />}
+          >
             View my progress <ArrowUpRight size={15} />
-          </Link>
+          </Button>
         }
       />
       <section className="overview-strip" aria-label="Your overview">
@@ -168,59 +180,58 @@ export function Discovery({ topics }: { topics: Topic[] }) {
               {topics.length} topics to explore
             </span>
           </div>
-          <div className="category-tabs" aria-label="Assessment categories">
+          <ToggleGroup
+            className="mb-5 max-w-full flex-wrap"
+            aria-label="Assessment categories"
+            value={[category]}
+            onValueChange={(values) => {
+              if (values[0]) filters.set({ category: values[0] })
+            }}
+          >
             {["All assessments", "Technical", "Interpersonal"].map((name) => (
-              <button
-                key={name}
-                aria-pressed={category === name}
-                className={category === name ? "selected" : ""}
-                onClick={() => filters.set({ category: name })}
-              >
+              <ToggleGroupItem key={name} value={name}>
                 {name}
                 <span>
                   {name === "All assessments"
                     ? topics.length
                     : topics.filter((t) => t.category === name).length}
                 </span>
-              </button>
+              </ToggleGroupItem>
             ))}
-          </div>
-          <div className="filter-toolbar">
-            <label className="search-field">
-              <Search size={17} />
-              <input
-                aria-label="Search assessments"
-                placeholder="Search a skill or topic…"
-                value={query}
-                onChange={(e) => filters.set({ q: e.target.value })}
+          </ToggleGroup>
+          <Collapsible open={expanded} onOpenChange={setExpanded}>
+            <div className="filter-toolbar">
+              <Label className="search-field">
+                <Search size={17} />
+                <Input
+                  aria-label="Search assessments"
+                  placeholder="Search a skill or topic…"
+                  value={query}
+                  onChange={(e) => filters.set({ q: e.target.value })}
+                />
+              </Label>
+              <CollapsibleTrigger
+                render={<Button variant="outline" className="filter-button" />}
+              >
+                <SlidersHorizontal />
+                Filters
+                {status !== "all" || difficulty !== "all" ? (
+                  <span className="filter-dot" />
+                ) : null}
+              </CollapsibleTrigger>
+              <Select
+                label="Sort assessments"
+                value={sort}
+                onChange={(value) => filters.set({ sort: value })}
+                options={[
+                  { value: "recommended", label: "Recommended" },
+                  { value: "progress", label: "Most progress" },
+                  { value: "latest", label: "Recently attempted" },
+                  { value: "alphabetical", label: "A to Z" },
+                ]}
               />
-            </label>
-            <Button
-              variant="outline"
-              className="filter-button"
-              onClick={() => setExpanded(!expanded)}
-              aria-expanded={expanded}
-            >
-              <SlidersHorizontal />
-              Filters
-              {status !== "all" || difficulty !== "all" ? (
-                <span className="filter-dot" />
-              ) : null}
-            </Button>
-            <Select
-              label="Sort assessments"
-              value={sort}
-              onChange={(value) => filters.set({ sort: value })}
-              options={[
-                { value: "recommended", label: "Recommended" },
-                { value: "progress", label: "Most progress" },
-                { value: "latest", label: "Recently attempted" },
-                { value: "alphabetical", label: "A to Z" },
-              ]}
-            />
-          </div>
-          {expanded && (
-            <div className="expanded-filters">
+            </div>
+            <CollapsibleContent className="expanded-filters">
               <Select
                 label="Completion status"
                 value={status}
@@ -257,8 +268,8 @@ export function Discovery({ topics }: { topics: Topic[] }) {
               >
                 Clear filters
               </Button>
-            </div>
-          )}
+            </CollapsibleContent>
+          </Collapsible>
           <div className="assessment-grid">
             {visible.map((topic) => (
               <AssessmentCard
@@ -308,9 +319,13 @@ export function Discovery({ topics }: { topics: Topic[] }) {
               You’re at 84% mastery. Try Medium to put your understanding to
               work.
             </p>
-            <Link href="/assessments/react" className="primary-link">
+            <Button
+              variant="default"
+              nativeButton={false}
+              render={<Link href="/assessments/react" />}
+            >
               Continue React <ArrowRight size={16} />
-            </Link>
+            </Button>
             <div className="recommendation-foot">
               <span>5 questions</span>
               <span>8 minutes</span>

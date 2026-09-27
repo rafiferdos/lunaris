@@ -1,3 +1,7 @@
+import { Card } from "@/components/ui/card"
+import { Badge as ShadcnBadge } from "@/components/ui/badge"
+import { Avatar as ShadcnAvatar, AvatarFallback } from "@/components/ui/avatar"
+import { Progress as ShadcnProgress } from "@/components/ui/progress"
 import Link from "next/link"
 import { ArrowUpRight, SearchX } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -30,7 +34,7 @@ export function Panel({
   children: React.ReactNode
   className?: string
 }) {
-  return <section className={cn("panel", className)}>{children}</section>
+  return <Card className={cn("panel block gap-0", className)}>{children}</Card>
 }
 export function Badge({
   children,
@@ -39,7 +43,11 @@ export function Badge({
   children: React.ReactNode
   tone?: string
 }) {
-  return <span className={cn("badge", `tone-${tone}`)}>{children}</span>
+  return (
+    <ShadcnBadge variant="secondary" className={cn("badge", `tone-${tone}`)}>
+      {children}
+    </ShadcnBadge>
+  )
 }
 export function Metric({
   label,
@@ -60,18 +68,13 @@ export function Metric({
 }
 export function Progress({ value, label }: { value: number; label: string }) {
   return (
-    <div
-      className="progress-track"
-      role="progressbar"
+    <ShadcnProgress
+      value={Math.min(100, Math.max(0, value))}
       aria-label={label}
-      aria-valuenow={value}
-      aria-valuemin={0}
-      aria-valuemax={100}
-    >
-      <span style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
-    </div>
+    />
   )
 }
+
 export function TextLink({
   href,
   children,
@@ -112,46 +115,18 @@ export function Avatar({
   small?: boolean
 }) {
   return (
-    <span aria-hidden="true" className={cn("avatar", small && "avatar-small")}>
-      {name
-        .split(" ")
-        .map((part) => part[0])
-        .slice(0, 2)
-        .join("")}
-    </span>
+    <ShadcnAvatar
+      aria-hidden="true"
+      className={cn("avatar", small && "avatar-small")}
+    >
+      <AvatarFallback>
+        {name
+          .split(" ")
+          .map((part) => part[0])
+          .slice(0, 2)
+          .join("")}
+      </AvatarFallback>
+    </ShadcnAvatar>
   )
 }
-export function Select({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string
-  value: string
-  onChange: (value: string) => void
-  options: readonly (string | { value: string; label: string })[]
-}) {
-  return (
-    <label className="select-label">
-      <span className="sr-only">{label}</span>
-      <select
-        aria-label={label}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {options.map((option) =>
-          typeof option === "string" ? (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ) : (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          )
-        )}
-      </select>
-    </label>
-  )
-}
+export { Select } from "./select"

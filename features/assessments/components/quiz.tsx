@@ -1,4 +1,9 @@
 "use client"
+import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Checkbox } from "@/components/ui/checkbox"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Separator } from "@/components/ui/separator"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -177,7 +182,7 @@ export function Quiz({
               <p className="muted mt-1 text-xs">Submits when time ends</p>
             </div>
           </div>
-          <hr className="my-6" />
+          <Separator className="my-6" />
           <h3 className="flex items-center gap-2">
             <ShieldCheck size={18} />A fair assessment for everyone
           </h3>
@@ -211,11 +216,14 @@ export function Quiz({
               timing and demo scoring differ.
             </li>
           </ul>
-          <label className="flex items-start gap-3 text-sm">
-            <input
-              type="checkbox"
+          <Label
+            htmlFor="integrity-consent"
+            className="flex items-start gap-3 text-sm"
+          >
+            <Checkbox
+              id="integrity-consent"
               checked={consent}
-              onChange={(e) => setConsent(e.target.checked)}
+              onCheckedChange={(checked) => setConsent(checked === true)}
               className="mt-1"
             />
             <span>
@@ -223,11 +231,11 @@ export function Quiz({
                 ? "I agree to fullscreen and browser focus monitoring for this attempt."
                 : "Enable browser focus monitoring for this attempt (optional)."}
             </span>
-          </label>
+          </Label>
           {error && (
-            <p role="alert" className="field-error mt-4">
-              {error}
-            </p>
+            <Alert variant="destructive" className="mt-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
           {availability.locked && (
             <p className="form-message mt-5">
@@ -288,7 +296,7 @@ export function Quiz({
         label="Assessment progress"
       />
       {integrity.warning && (
-        <div role="alert" className="subtle-banner mt-5">
+        <Alert className="mt-5 flex flex-wrap items-center gap-3">
           <div className="flex-1">
             {integrity.warning} Warning {integrity.events.warnings} of{" "}
             {attemptLimits.violationThreshold}.
@@ -306,7 +314,7 @@ export function Quiz({
             {difficulty === "competitive" ? <Maximize2 /> : <CheckCircle2 />}
             Continue
           </Button>
-        </div>
+        </Alert>
       )}
       <Panel className="mt-6">
         <Badge>
@@ -321,21 +329,54 @@ export function Quiz({
         {question.code && (
           <CodeBlock code={question.code} language={question.language} />
         )}
-        <fieldset>
-          <legend className="sr-only">Answer choices</legend>
-          {question.options.map((option, i) => (
-            <label key={option.id} className="answer-option">
-              <input
-                type={question.type === "multiple" ? "checkbox" : "radio"}
-                name={question.id}
-                checked={selected.includes(option.id)}
-                onChange={() => choose(option.id)}
-              />
-              <span>{option.text}</span>
-              <span className="answer-key">{String.fromCharCode(65 + i)}</span>
-            </label>
-          ))}
-        </fieldset>
+        {question.type === "multiple" ? (
+          <fieldset>
+            <legend className="sr-only">
+              Answer choices: select all that apply
+            </legend>
+            {question.options.map((option, i) => (
+              <Label
+                key={option.id}
+                htmlFor={`${question.id}-${option.id}`}
+                className="answer-option"
+              >
+                <Checkbox
+                  id={`${question.id}-${option.id}`}
+                  checked={selected.includes(option.id)}
+                  onCheckedChange={() => choose(option.id)}
+                />
+                <span>{option.text}</span>
+                <span className="answer-key">
+                  {String.fromCharCode(65 + i)}
+                </span>
+              </Label>
+            ))}
+          </fieldset>
+        ) : (
+          <RadioGroup
+            key={question.id}
+            aria-label="Answer choices"
+            value={selected[0] ?? ""}
+            onValueChange={choose}
+          >
+            {question.options.map((option, i) => (
+              <Label
+                key={option.id}
+                htmlFor={`${question.id}-${option.id}`}
+                className="answer-option"
+              >
+                <RadioGroupItem
+                  id={`${question.id}-${option.id}`}
+                  value={option.id}
+                />
+                <span>{option.text}</span>
+                <span className="answer-key">
+                  {String.fromCharCode(65 + i)}
+                </span>
+              </Label>
+            ))}
+          </RadioGroup>
+        )}
         <div className="quiz-controls">
           <Button
             variant="outline"
@@ -364,7 +405,9 @@ export function Quiz({
       <div className="quiz-controls">
         <div className="question-nav" aria-label="Question navigation">
           {questions.map((q, i) => (
-            <button
+            <Button
+              variant="outline"
+              size="icon"
               key={q.id}
               disabled={!level.previous && i !== index}
               aria-label={`Question ${i + 1}`}
@@ -375,7 +418,7 @@ export function Quiz({
               onClick={() => navigate(i)}
             >
               {i + 1}
-            </button>
+            </Button>
           ))}
         </div>
         <span className="muted text-xs">
@@ -383,9 +426,9 @@ export function Quiz({
         </span>
       </div>
       {error && (
-        <p role="alert" className="field-error mt-4">
-          {error}
-        </p>
+        <Alert variant="destructive" className="mt-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
       <ConfirmDialog
         open={confirm}

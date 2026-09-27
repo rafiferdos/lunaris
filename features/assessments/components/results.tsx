@@ -1,4 +1,13 @@
 "use client"
+import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion"
 import Link from "next/link"
 import { resultInsights } from "../utils/result-insights"
 import { ArrowLeft, ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react"
@@ -21,15 +30,19 @@ export function Results({ attemptId }: { attemptId: string }) {
   const attempt = attempts.find((a) => a.id === attemptId)
   if (!attempt) {
     return !hydrated ? (
-      <div className="skeleton" />
+      <Skeleton className="skeleton" />
     ) : (
       <EmptyState
         title="Result not found"
         description="This demo result may belong to another browser, or local data was cleared."
       >
-        <Link href="/history" className="primary-link">
+        <Button
+          variant="default"
+          nativeButton={false}
+          render={<Link href="/history" />}
+        >
           View history
-        </Link>
+        </Button>
       </EmptyState>
     )
   }
@@ -153,7 +166,7 @@ export function Results({ attemptId }: { attemptId: string }) {
               Review the explanation below before your next attempt.
             </p>
           </div>
-          <hr className="my-6" />
+          <Separator className="my-6" />
           <p className="muted text-xs">
             Percentiles and mastery changes will come from the scoring API. This
             demo does not infer population rankings from five questions.
@@ -223,53 +236,57 @@ export function Results({ attemptId }: { attemptId: string }) {
           "correct" in o ? o.correct : o.quality === "Best"
         )
         return (
-          <details key={review.question.id} className="review-row">
-            <summary>
-              <span className="muted font-mono text-xs">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <span className="flex-1">{review.question.prompt}</span>
-              <Badge
-                tone={
-                  ["Correct", "Best", "Strong"].includes(review.quality)
-                    ? "mint"
-                    : review.quality === "Skipped"
-                      ? "neutral"
-                      : "amber"
-                }
-              >
-                {review.quality}
-              </Badge>
-            </summary>
-            <div className="review-body">
-              {review.question.code && (
-                <CodeBlock
-                  code={review.question.code}
-                  language={review.question.language}
-                />
-              )}
-              <p>
-                <strong>Your answer:</strong>{" "}
-                {selected.map((o) => o.text).join(" · ") || "Not answered"}
-              </p>
-              <p>
-                <strong>
-                  {review.question.type === "weighted"
-                    ? "Best response"
-                    : "Correct answer"}
-                  :
-                </strong>{" "}
-                {correctOptions.map((o) => o.text).join(" · ")}
-              </p>
-              <p className="review-explanation">
-                {review.question.explanation}
-              </p>
-              <p className="muted text-xs">
-                {review.points} / {review.maximum} points ·{" "}
-                {review.answer.seconds}s · {review.question.tags.join(", ")}
-              </p>
-            </div>
-          </details>
+          <Accordion key={review.question.id} className="review-row">
+            <AccordionItem value="details" className="border-0">
+              <AccordionTrigger>
+                <span className="muted font-mono text-xs">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="flex-1">{review.question.prompt}</span>
+                <Badge
+                  tone={
+                    ["Correct", "Best", "Strong"].includes(review.quality)
+                      ? "mint"
+                      : review.quality === "Skipped"
+                        ? "neutral"
+                        : "amber"
+                  }
+                >
+                  {review.quality}
+                </Badge>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="review-body">
+                  {review.question.code && (
+                    <CodeBlock
+                      code={review.question.code}
+                      language={review.question.language}
+                    />
+                  )}
+                  <p>
+                    <strong>Your answer:</strong>{" "}
+                    {selected.map((o) => o.text).join(" · ") || "Not answered"}
+                  </p>
+                  <p>
+                    <strong>
+                      {review.question.type === "weighted"
+                        ? "Best response"
+                        : "Correct answer"}
+                      :
+                    </strong>{" "}
+                    {correctOptions.map((o) => o.text).join(" · ")}
+                  </p>
+                  <p className="review-explanation">
+                    {review.question.explanation}
+                  </p>
+                  <p className="muted text-xs">
+                    {review.points} / {review.maximum} points ·{" "}
+                    {review.answer.seconds}s · {review.question.tags.join(", ")}
+                  </p>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         )
       })}
       <div className="subtle-banner section-space">
@@ -278,10 +295,14 @@ export function Results({ attemptId }: { attemptId: string }) {
         authoritative rating, XP, normalization, and integrity.
       </div>
       <div className="mt-6 flex justify-end">
-        <Link href="/assessments" className="primary-link">
+        <Button
+          variant="default"
+          nativeButton={false}
+          render={<Link href="/assessments" />}
+        >
           Explore assessments
           <ArrowRight size={15} />
-        </Link>
+        </Button>
       </div>
     </PageEntrance>
   )

@@ -8,14 +8,22 @@ export function resultInsights(attempt: Attempt) {
     {}
   )
   const responseTimes = attempt.reviews.map((review) => review.answer.seconds)
+  const answeredTimes = attempt.reviews
+    .filter((review) => review.answer.selected.length > 0)
+    .map((review) => review.answer.seconds)
   const ranked = [...attempt.reviews].sort(
     (a, b) => b.points / b.maximum - a.points / a.maximum
   )
   return {
     qualities,
     responseTimes,
-    average: Math.round(attempt.duration / attempt.reviews.length),
-    fastest: Math.min(...responseTimes),
+    average: answeredTimes.length
+      ? Math.round(
+          answeredTimes.reduce((sum, seconds) => sum + seconds, 0) /
+            answeredTimes.length
+        )
+      : 0,
+    fastest: answeredTimes.length ? Math.min(...answeredTimes) : 0,
     correct: (qualities.Correct ?? 0) + (qualities.Best ?? 0),
     incorrect: qualities.Incorrect ?? 0,
     skipped: qualities.Skipped ?? 0,

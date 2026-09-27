@@ -1,4 +1,18 @@
 "use client"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+} from "@/components/ui/pagination"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table"
 import { statsService } from "@/features/stats/stats-service"
 import { useState } from "react"
 import {
@@ -63,21 +77,22 @@ export function LeaderboardPage() {
         }
       />
       <div className="mb-6 flex flex-wrap justify-between gap-4">
-        <div className="segmented">
+        <ToggleGroup
+          aria-label="Ranking period"
+          value={[period]}
+          onValueChange={(values) => {
+            if (values[0]) {
+              filters.set({ period: values[0] })
+              setPage(0)
+            }
+          }}
+        >
           {["weekly", "monthly", "all-time"].map((value) => (
-            <button
-              key={value}
-              className="capitalize"
-              aria-pressed={value === period}
-              onClick={() => {
-                filters.set({ period: value })
-                setPage(0)
-              }}
-            >
+            <ToggleGroupItem key={value} value={value} className="capitalize">
               {value.replace("-", " ")}
-            </button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
         <div className="flex flex-wrap gap-2">
           <Select
             label="Ranking category"
@@ -161,51 +176,59 @@ export function LeaderboardPage() {
       </Panel>
       <Panel className="section-space !p-0">
         <div className="table-scroll">
-          <table className="ranking-table">
-            <thead>
-              <tr>
-                <th>RANK</th>
-                <th>MEMBER</th>
-                <th>RATING</th>
-                <th>XP</th>
-                <th>ACCURACY</th>
-                <th>ASSESSMENTS</th>
-                <th>STREAK</th>
-                <th>INTEGRITY</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="ranking-table">
+            <TableHeader>
+              <TableRow>
+                <TableHead>RANK</TableHead>
+                <TableHead>MEMBER</TableHead>
+                <TableHead>RATING</TableHead>
+                <TableHead>XP</TableHead>
+                <TableHead>ACCURACY</TableHead>
+                <TableHead>ASSESSMENTS</TableHead>
+                <TableHead>STREAK</TableHead>
+                <TableHead>INTEGRITY</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {users.slice(page * 10, page * 10 + 10).map((user) => (
                 <RankingRow key={user.id} user={user} />
               ))}
               <RankingRow user={currentUser} current />
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </Panel>
       <div className="pagination">
         <span>
           Ranked by rating · {period.replace("-", " ")} · Mock rankings
         </span>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            aria-label="Previous ranking page"
-            disabled={page === 0}
-            onClick={() => setPage(page - 1)}
-          >
-            <ArrowLeft />
-          </Button>
-          <span>{page + 1} / 2</span>
-          <Button
-            variant="outline"
-            aria-label="Next ranking page"
-            disabled={page === 1}
-            onClick={() => setPage(page + 1)}
-          >
-            <ArrowRight />
-          </Button>
-        </div>
+        <Pagination className="m-0 w-auto" aria-label="Leaderboard pages">
+          <PaginationContent>
+            <PaginationItem>
+              <Button
+                variant="outline"
+                aria-label="Previous ranking page"
+                disabled={page === 0}
+                onClick={() => setPage(page - 1)}
+              >
+                <ArrowLeft />
+              </Button>
+            </PaginationItem>
+            <PaginationItem>
+              <span>{page + 1} / 2</span>
+            </PaginationItem>
+            <PaginationItem>
+              <Button
+                variant="outline"
+                aria-label="Next ranking page"
+                disabled={page === 1}
+                onClick={() => setPage(page + 1)}
+              >
+                <ArrowRight />
+              </Button>
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       </div>
       <p className="muted text-xs">
         Filters select illustrative ranking snapshots. Easy assessments do not
@@ -222,8 +245,8 @@ function RankingRow({
   current?: boolean
 }) {
   return (
-    <tr className={current ? "current-user" : ""}>
-      <td>
+    <TableRow className={current ? "current-user" : ""}>
+      <TableCell>
         <span className="inline-flex items-center gap-3">
           <strong>{user.rank}</strong>
           <span className={user.movement > 0 ? "positive" : "muted"}>
@@ -234,8 +257,8 @@ function RankingRow({
             )}
           </span>
         </span>
-      </td>
-      <td>
+      </TableCell>
+      <TableCell>
         <div className="flex items-center gap-3">
           <Avatar name={user.name} small />
           <div>
@@ -245,15 +268,15 @@ function RankingRow({
             <p className="muted text-xs">@{user.username}</p>
           </div>
         </div>
-      </td>
-      <td>
+      </TableCell>
+      <TableCell>
         <strong>{user.rating.toLocaleString()}</strong>
-      </td>
-      <td className="muted">{user.xp.toLocaleString()}</td>
-      <td>{user.accuracy}%</td>
-      <td>{user.assessments}</td>
-      <td>{user.streak} days</td>
-      <td>{user.integrity}%</td>
-    </tr>
+      </TableCell>
+      <TableCell className="muted">{user.xp.toLocaleString()}</TableCell>
+      <TableCell>{user.accuracy}%</TableCell>
+      <TableCell>{user.assessments}</TableCell>
+      <TableCell>{user.streak} days</TableCell>
+      <TableCell>{user.integrity}%</TableCell>
+    </TableRow>
   )
 }

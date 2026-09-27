@@ -1,4 +1,8 @@
 "use client"
+import { Separator } from "@/components/ui/separator"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import { MapPin, CalendarDays, Pencil, Check } from "lucide-react"
 import {
@@ -90,7 +94,7 @@ export function ProfilePage() {
               Joined June 2026
             </span>
           </div>
-          <hr className="my-7" />
+          <Separator className="my-7" />
           <div className="metric-grid">
             <Metric label="Rating" value={stats.rating.toLocaleString()} />
             <Metric label="Global rank" value="#128" />
@@ -108,7 +112,7 @@ export function ProfilePage() {
             <Check size={14} />
             All essential details added
           </div>
-          <hr className="my-6" />
+          <Separator className="my-6" />
           <h3>Preferred skill areas</h3>
           <div className="mt-4 flex flex-wrap gap-2">
             {profile.skills.split(",").map((skill) => (
@@ -134,10 +138,10 @@ export function ProfilePage() {
                   { key: "skills", label: "Skill areas (comma separated)" },
                 ] as const
               ).map(({ key, label }) => (
-                <label className="field" key={key}>
+                <Label className="field" key={key}>
                   {label}
                   {key === "bio" ? (
-                    <textarea
+                    <Textarea
                       value={draft[key]}
                       onChange={(e) =>
                         setDraft({ ...draft, [key]: e.target.value })
@@ -148,7 +152,7 @@ export function ProfilePage() {
                       }
                     />
                   ) : (
-                    <input
+                    <Input
                       value={draft[key]}
                       type={key === "email" ? "email" : "text"}
                       onChange={(e) =>
@@ -165,7 +169,7 @@ export function ProfilePage() {
                       {errors[key]}
                     </span>
                   )}
-                </label>
+                </Label>
               ))}
             </div>
             <div className="mt-6 flex justify-end">

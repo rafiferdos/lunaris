@@ -1,4 +1,6 @@
 "use client"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -200,9 +202,9 @@ function AuthField({
   error?: string
 }) {
   return (
-    <label className="field">
+    <Label className="field">
       {label}
-      <input
+      <Input
         name={name}
         type={type}
         autoComplete={name === "password" ? "current-password" : name}
@@ -215,6 +217,6 @@ function AuthField({
           {error}
         </span>
       )}
-    </label>
+    </Label>
   )
 }

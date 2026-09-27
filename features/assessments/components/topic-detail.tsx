@@ -1,4 +1,6 @@
 "use client"
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
 import { usePreferences } from "@/features/settings/preferences"
 import {
@@ -124,7 +126,7 @@ export function TopicDetail({ topic, count }: { topic: Topic; count: number }) {
                   {level.seconds / 60} min
                 </span>
               </div>
-              <hr />
+              <Separator />
               <ul>
                 <li>
                   <Check size={14} />
@@ -154,22 +156,26 @@ export function TopicDetail({ topic, count }: { topic: Topic; count: number }) {
                 </li>
               </ul>
               {topic.available && !availability.locked ? (
-                <Link
-                  href={`/assessments/${topic.slug}/take?level=${key}`}
-                  className={
-                    key === preferences.difficulty
-                      ? "primary-link"
-                      : "outline-link"
+                <Button
+                  className="w-full"
+                  nativeButton={false}
+                  render={
+                    <Link
+                      href={`/assessments/${topic.slug}/take?level=${key}`}
+                    />
+                  }
+                  variant={
+                    key === preferences.difficulty ? "default" : "outline"
                   }
                 >
                   Choose {level.name}
                   <ArrowRight size={14} />
-                </Link>
+                </Button>
               ) : (
-                <div className="outline-link muted">
+                <Button variant="outline" disabled className="w-full">
                   <LockKeyhole size={14} />
                   {topic.available ? "Available tomorrow" : "Coming soon"}
-                </div>
+                </Button>
               )}
             </Panel>
           )
