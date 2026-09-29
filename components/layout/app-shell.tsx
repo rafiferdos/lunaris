@@ -45,11 +45,11 @@ import {
   PopoverTitle,
   PopoverDescription,
 } from "@/components/ui/popover"
-import {
-  useAttempts,
-  attemptAvailability,
-} from "@/features/history/use-attempts"
+import { useAvailability } from "@/features/history/use-attempts"
 import { activitySummary } from "@/features/stats/activity"
+import { useWorkspace } from "@/features/workspace/workspace-provider"
+import { useSignOut } from "@/features/auth/auth-boundary"
+import { MutationError } from "@/components/shared/query-state"
 import { useProfile } from "@/features/profile/use-profile"
 const navigation = [
   { href: "/assessments", label: "Assessments", icon: LayoutGrid },
@@ -82,9 +82,10 @@ function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const { state, isMobile, setOpenMobile } = useSidebar()
   const [notifications, setNotifications] = useState(false)
   const profile = useProfile()
-  const attempts = useAttempts()
-  const activity = activitySummary(attempts)
-  const availability = attemptAvailability(attempts)
+  const { activity: activityData, assessments } = useWorkspace()
+  const signOut = useSignOut()
+  const activity = activitySummary(activityData)
+  const availability = useAvailability()
   const collapsed = state === "collapsed" && !isMobile
   const current =
     [...navigation, ...accountNavigation].find((n) =>
@@ -107,7 +108,9 @@ function WorkspaceShell({ children }: { children: React.ReactNode }) {
               <Icon />
               <span>{label}</span>
             </SidebarMenuButton>
-            {label === "Assessments" && <SidebarMenuBadge>26</SidebarMenuBadge>}
+            {label === "Assessments" && (
+              <SidebarMenuBadge>{assessments.length}</SidebarMenuBadge>
+            )}
           </SidebarMenuItem>
         ))}
       </SidebarMenu>
@@ -176,6 +179,22 @@ function WorkspaceShell({ children }: { children: React.ReactNode }) {
             </div>
           )}
           <nav aria-label="Account navigation">{menu(accountNavigation)}</nav>
+          {profile.role === "ADMIN" && (
+            <Link
+              href="/admin/questions/import"
+              className="text-link px-4 py-2"
+            >
+              Question import
+            </Link>
+          )}
+          <Button
+            variant="ghost"
+            disabled={signOut.isPending}
+            onClick={() => signOut.mutate()}
+          >
+            Sign out
+          </Button>
+          <MutationError error={signOut.error} />
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
@@ -219,7 +238,7 @@ function WorkspaceShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3">
             <span className="demo-label">
               <span />
-              Demo workspace
+              Personal workspace
             </span>
             <Popover open={notifications} onOpenChange={setNotifications}>
               <PopoverTrigger
@@ -246,7 +265,9 @@ function WorkspaceShell({ children }: { children: React.ReactNode }) {
                   </Button>
                 </div>
                 <PopoverDescription>
-                  Your React mastery is at 84%. Try a medium assessment next.
+                  {availability.locked
+                    ? "Your quota is used. Check assessment availability for the next UTC reset."
+                    : "You can start an assessment today."}
                 </PopoverDescription>
                 <Button
                   variant="link"
@@ -284,7 +305,7 @@ function WorkspaceShell({ children }: { children: React.ReactNode }) {
         </main>
         <footer className="app-footer">
           <span>Lunaris · Make progress, with purpose.</span>
-          <span>Frontend preview · September 2026</span>
+          <span>Progress, saved to your account</span>
         </footer>
       </div>
     </>

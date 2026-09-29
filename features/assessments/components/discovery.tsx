@@ -34,21 +34,24 @@ import { PageEntrance } from "@/components/shared/motion"
 import { Button } from "@/components/ui/button"
 import { useUrlFilters } from "@/hooks/use-url-filters"
 import {
-  useAttempts,
-  attemptAvailability,
+  useRecentAttempts,
+  useAvailability,
 } from "@/features/history/use-attempts"
 import { useProfile } from "@/features/profile/use-profile"
-import { userBaseline } from "@/features/profile/profile-service"
-import type { Topic } from "../types/assessment"
+import { useWorkspace } from "@/features/workspace/workspace-provider"
+import { topicView } from "../services/assessment-service"
 import { AssessmentCard } from "./assessment-card"
-export function Discovery({ topics }: { topics: Topic[] }) {
+export function Discovery() {
+  const { assessments, overview, activity: activityData } = useWorkspace()
+  const topics = assessments.map(topicView)
   const filters = useUrlFilters()
   const [expanded, setExpanded] = useState(false)
-  const attempts = useAttempts()
+  const recentQuery = useRecentAttempts()
+  const attempts = recentQuery.data?.data ?? []
   const profile = useProfile()
-  const activity = activitySummary(attempts)
+  const activity = activitySummary(activityData)
   const preferences = usePreferences()
-  const availability = attemptAvailability(attempts)
+  const availability = useAvailability()
   const category = filters.get("category", "All assessments")
   const query = filters.get("q")
   const status = filters.get("status", "all")
@@ -63,13 +66,20 @@ export function Discovery({ topics }: { topics: Topic[] }) {
           .includes(query.toLowerCase()) &&
         (status === "all" ||
           (status === "attempted"
-            ? attempts.some((a) => a.topic === topic.slug)
+            ? !!assessments.find((a) => a.slug === topic.slug)?.progress
+                ?.assessmentCount
             : status === "unattempted"
-              ? !attempts.some((a) => a.topic === topic.slug)
+              ? !assessments.find((a) => a.slug === topic.slug)?.progress
+                  ?.assessmentCount
               : status === "completed"
                 ? topic.mastery >= 80
                 : topic.mastery < 80)) &&
-        (difficulty === "all" || topic.available)
+        (difficulty === "all" ||
+          assessments
+            .find((a) => a.slug === topic.slug)
+            ?.modes.some(
+              (m) => m.mode.toLowerCase() === difficulty && m.available
+            ))
     )
     .sort((a, b) =>
       sort === "alphabetical"
@@ -77,27 +87,19 @@ export function Discovery({ topics }: { topics: Topic[] }) {
         : sort === "progress"
           ? b.mastery - a.mastery
           : sort === "latest"
-            ? Math.max(
-                0,
-                ...attempts
-                  .filter((x) => x.topic === b.slug)
-                  .map((x) => Date.parse(x.date))
+            ? Date.parse(
+                assessments.find((t) => t.slug === b.slug)?.progress
+                  ?.lastAssessmentAt ?? "1970-01-01"
               ) -
-              Math.max(
-                0,
-                ...attempts
-                  .filter((x) => x.topic === a.slug)
-                  .map((x) => Date.parse(x.date))
+              Date.parse(
+                assessments.find((t) => t.slug === a.slug)?.progress
+                  ?.lastAssessmentAt ?? "1970-01-01"
               )
             : Number(b.available) - Number(a.available) ||
               Number(preferences.topics.includes(b.slug)) -
                 Number(preferences.topics.includes(a.slug))
     )
-  const rating =
-    userBaseline.rating +
-    attempts
-      .filter((a) => a.id.startsWith("attempt-"))
-      .reduce((sum, a) => sum + a.ratingChange, 0)
+  const rating = overview.rating
   return (
     <PageEntrance>
       <PageHeader
@@ -122,7 +124,6 @@ export function Discovery({ topics }: { topics: Topic[] }) {
           <div>
             <p className="muted text-xs">Your rating</p>
             <strong>{rating.toLocaleString()}</strong>
-            <span className="positive ml-3 text-xs">↗ 64 this month</span>
           </div>
         </div>
         <div>
@@ -131,8 +132,7 @@ export function Discovery({ topics }: { topics: Topic[] }) {
           </span>
           <div>
             <p className="muted text-xs">Global rank</p>
-            <strong>#128</strong>
-            <span className="muted ml-3 text-xs">Top 8%</span>
+            <strong>{overview.rank ? `#${overview.rank}` : "Unranked"}</strong>
           </div>
         </div>
         <div>
@@ -161,7 +161,7 @@ export function Discovery({ topics }: { topics: Topic[] }) {
             />
             <p className="muted mt-2 text-xs">
               {availability.usedToday
-                ? "Today’s attempt complete · Next: tomorrow"
+                ? "Today’s quota used · Resets at 00:00 UTC"
                 : `${7 - availability.week} attempts left this week`}
             </p>
           </div>
@@ -275,7 +275,10 @@ export function Discovery({ topics }: { topics: Topic[] }) {
               <AssessmentCard
                 key={topic.slug}
                 topic={topic}
-                attempts={attempts.filter((a) => a.topic === topic.slug).length}
+                attempts={
+                  assessments.find((a) => a.slug === topic.slug)?.progress
+                    ?.assessmentCount ?? 0
+                }
               />
             ))}
           </div>
@@ -311,14 +314,11 @@ export function Discovery({ topics }: { topics: Topic[] }) {
               Re<span>↗</span>
             </span>
             <h3>
-              Good at React.
+              Explore React.
               <br />
-              Ready for better?
+              Ready to practice?
             </h3>
-            <p>
-              You’re at 84% mastery. Try Medium to put your understanding to
-              work.
-            </p>
+            <p>Choose a level and put your understanding to work.</p>
             <Button
               variant="default"
               nativeButton={false}
@@ -356,7 +356,7 @@ export function Discovery({ topics }: { topics: Topic[] }) {
             <div className="availability">
               <span className="status-dot" />
               {availability.locked
-                ? "Next attempt available tomorrow"
+                ? "Attempt quota currently used"
                 : "You have an attempt available today"}
             </div>
           </section>
@@ -366,12 +366,16 @@ export function Discovery({ topics }: { topics: Topic[] }) {
               <Link
                 key={attempt.id}
                 className="recent-row"
-                href={`/results/${attempt.id}`}
+                href={
+                  attempt.status === "IN_PROGRESS"
+                    ? `/assessments/${attempt.topic}/take?attempt=${attempt.id}`
+                    : `/results/${attempt.id}`
+                }
               >
                 <div>
                   <strong>{attempt.topicName}</strong>
                   <span>
-                    {attempt.difficulty} ·{" "}
+                    {attempt.mode.toLowerCase()} ·{" "}
                     {new Date(attempt.date).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
@@ -379,7 +383,11 @@ export function Discovery({ topics }: { topics: Topic[] }) {
                     })}
                   </span>
                 </div>
-                <Badge tone="mint">{attempt.performance}%</Badge>
+                <Badge tone="mint">
+                  {attempt.status === "IN_PROGRESS"
+                    ? "Resume"
+                    : `${Math.round(attempt.normalizedScore ?? 0)}%`}
+                </Badge>
               </Link>
             ))}
             <TextLink href="/history">View all activity</TextLink>

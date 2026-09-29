@@ -6,12 +6,19 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useId, useState } from "react"
 import { useTheme } from "next-themes"
 import Link from "next/link"
+import { useSignOut } from "@/features/auth/auth-boundary"
+import { MutationError } from "@/components/shared/query-state"
+import { defaults } from "./schema"
 import { Sun, Moon, Monitor, Check } from "lucide-react"
 import { PageHeader, Panel, Select } from "@/components/shared/ui"
 import { Button } from "@/components/ui/button"
 import { PageEntrance } from "@/components/shared/motion"
 import { useHydrated } from "@/lib/local-store"
-import { usePreferences, setPreferences, type Preferences } from "./preferences"
+import {
+  usePreferences,
+  useUpdatePreferences,
+  type Preferences,
+} from "./preferences"
 const palettes = [
   { name: "taupe", label: "Taupe", swatch: "oklch(.55 .02 43)" },
   { name: "neutral", label: "Neutral", swatch: "oklch(.35 0 0)" },
@@ -23,17 +30,17 @@ const palettes = [
 ] as const
 export function SettingsPage() {
   const preferences = usePreferences()
-  const { theme, setTheme } = useTheme()
+  const { theme } = useTheme()
+  const mutation = useUpdatePreferences()
+  const signOut = useSignOut()
   const hydrated = useHydrated()
   const [message, setMessage] = useState("")
-  function update(patch: Partial<Preferences>) {
+  async function update(patch: Partial<Preferences>) {
     try {
-      setPreferences({ ...preferences, ...patch })
-      setMessage("Preferences saved on this device.")
+      await mutation.mutateAsync(patch)
+      setMessage("Preferences saved to your account.")
     } catch {
-      setMessage(
-        "Could not save preferences. Check your browser storage settings."
-      )
+      setMessage("Could not save preferences. Check your connection and retry.")
     }
   }
   return (
@@ -59,7 +66,10 @@ export function SettingsPage() {
                 aria-label="Color mode"
                 value={hydrated && theme ? [theme] : []}
                 onValueChange={(values) => {
-                  if (values[0]) setTheme(values[0])
+                  if (["light", "dark", "system"].includes(values[0]))
+                    void update({
+                      mode: values[0] as "light" | "dark" | "system",
+                    })
                 }}
               >
                 {[
@@ -213,7 +223,7 @@ export function SettingsPage() {
             <h2>Notifications</h2>
             <SettingToggle
               label="Progress summaries"
-              description="Email preference only; no emails are sent in this demo."
+              description="Save your email preference. Delivery is not enabled yet."
               checked={preferences.email}
               onChange={(value) => update({ email: value })}
             />
@@ -228,44 +238,26 @@ export function SettingsPage() {
             <h2>Privacy & account</h2>
             <SettingToggle
               label="Public profile"
-              description="Local preference; the demo leaderboard remains visible."
+              description="Show your eligible results on the public leaderboard."
               checked={preferences.publicProfile}
               onChange={(value) => update({ publicProfile: value })}
             />
             <p className="muted my-5 text-xs">
-              This is a mock account. No credentials or personal data are sent
-              to a server.
+              Your profile and preferences are saved securely to your account.
             </p>
             <Button
               variant="outline"
-              nativeButton={false}
-              render={<Link href="/login" />}
+              disabled={signOut.isPending}
+              onClick={() => signOut.mutate()}
             >
-              Leave demo workspace
+              Sign out
             </Button>
+            <MutationError error={signOut.error} />
           </Panel>
           <Button
             variant="outline"
-            onClick={() => {
-              try {
-                setPreferences({
-                  palette: "taupe",
-                  radius: "default",
-                  density: "comfortable",
-                  reducedMotion: false,
-                  difficulty: "easy",
-                  timer: true,
-                  email: true,
-                  reminders: false,
-                  publicProfile: true,
-                  topics: ["javascript", "react"],
-                })
-                setTheme("system")
-                setMessage("Appearance and preferences restored to defaults.")
-              } catch {
-                setMessage("Could not reset preferences.")
-              }
-            }}
+            onClick={() => void update(defaults)}
+            disabled={mutation.isPending}
           >
             Reset preferences
           </Button>

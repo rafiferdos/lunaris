@@ -1,9 +1,12 @@
 "use client"
-import { useLocalValue } from "@/lib/local-store"
-import { profileSchema, profileService } from "./profile-service"
-const initial = profileService.get()
+import { useWorkspace } from "@/features/workspace/workspace-provider"
 export function useProfile() {
-  return useLocalValue("lunaris:profile", initial, (v) =>
-    profileSchema.parse(v)
-  )
+  const { profile } = useWorkspace()
+  return {
+    ...profile,
+    name: profile.displayName,
+    username: profile.username ?? "",
+    country: profile.country ?? "",
+    skills: profile.preferredTopics.join(", "),
+  }
 }

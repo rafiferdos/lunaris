@@ -1,300 +1,198 @@
 "use client"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { useState } from "react"
+import { useQueries } from "@tanstack/react-query"
 import Link from "next/link"
-import { ArrowUpRight, TrendingUp, Flame } from "lucide-react"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import {
   PageHeader,
   Panel,
   Metric,
   Progress,
-  Badge,
+  EmptyState,
 } from "@/components/shared/ui"
-import { PageEntrance } from "@/components/shared/motion"
+import { QueryState } from "@/components/shared/query-state"
 import { LazyTrend } from "@/components/charts/lazy-trend"
-import { useAttempts } from "@/features/history/use-attempts"
-import type { Topic } from "@/features/assessments/types/assessment"
-import { statsService } from "./stats-service"
-export function StatsPage({ topics }: { topics: Topic[] }) {
-  const attempts = useAttempts()
-  const overview = statsService.getOverview(attempts)
-  const [tab, setTab] = useState("Overview")
-  const [period, setPeriod] = useState("3 months")
-  const skills = topics
-    .filter((t) => t.mastery > 0)
-    .sort((a, b) => b.mastery - a.mastery)
-  const trend =
-    period === "This month"
-      ? statsService.ratingHistory.slice(-2)
-      : statsService.ratingHistory
+import { useWorkspace } from "@/features/workspace/workspace-provider"
+import { useSession } from "@/features/auth/auth-boundary"
+import { queries } from "@/lib/api/queries"
+import { percent, dateTime } from "@/lib/format"
+export function StatsPage() {
+  const { overview: o, activity } = useWorkspace(),
+    { user } = useSession()
+  const [performance, topics] = useQueries({
+    queries: [queries.performance(user.id), queries.topics(user.id)],
+  })
   return (
-    <PageEntrance>
+    <>
       <PageHeader
         eyebrow="THE BIGGER PICTURE"
         title="Your effort, made visible."
-        description="Understand your strengths. Give your next step a little direction."
-        action={
-          <Badge tone="mint">
-            <TrendingUp size={13} />
-            +64 rating this month
-          </Badge>
-        }
+        description="Results and progress from your completed assessments."
       />
-      <Tabs value={tab} onValueChange={(value) => setTab(String(value))}>
-        <TabsList
-          variant="line"
-          className="mb-6"
-          aria-label="Statistics sections"
-        >
-          {["Overview", "Skills", "Activity"].map((value) => (
-            <TabsTrigger key={value} value={value}>
-              {value}
-            </TabsTrigger>
-          ))}
+      <Tabs defaultValue="overview">
+        <TabsList variant="line" className="mb-6">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="skills">Skills</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
-        <TabsContent value="Overview">
+        <TabsContent value="overview">
           <div className="metric-grid">
             <Panel>
               <Metric
                 label="Current rating"
-                value={overview.rating.toLocaleString()}
-                note="Global rank #128 · Top 8%"
+                value={o.rating}
+                note={
+                  o.rank
+                    ? `Global rank #${o.rank}`
+                    : "Complete an eligible assessment to rank"
+                }
               />
             </Panel>
             <Panel>
               <Metric
-                label="Average accuracy"
-                value={`${overview.accuracy}%`}
-                note={`${overview.questions} questions answered`}
+                label="Objective accuracy"
+                value={percent(o.accuracyPercent)}
+                note={`${o.questionsAnswered} questions answered`}
               />
             </Panel>
             <Panel>
               <Metric
-                label="Total experience"
-                value={overview.xp.toLocaleString()}
-                note={`${overview.completed} assessments completed`}
+                label="Total XP"
+                value={o.totalXp}
+                note={`${o.assessmentCount} completed assessments`}
               />
             </Panel>
             <Panel>
               <Metric
                 label="Current streak"
-                value={`${overview.activity.current} days`}
-                note={`Personal best: ${overview.activity.longest} days`}
+                value={`${o.currentStreak} days`}
+                note={`Best: ${o.longestStreak} days`}
               />
             </Panel>
           </div>
           <div className="two-column section-space">
             <Panel>
-              <div className="panel-title">
-                <h3>Rating over time</h3>
-                <ToggleGroup
-                  aria-label="Rating period"
-                  value={[period]}
-                  onValueChange={(values) => {
-                    if (values[0]) setPeriod(values[0])
-                  }}
-                >
-                  {["This month", "3 months"].map((value) => (
-                    <ToggleGroupItem value={value} key={value}>
-                      {value}
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-              </div>
-              <LazyTrend
-                points={trend.map((point, index) =>
-                  index === trend.length - 1
-                    ? { ...point, value: overview.rating }
-                    : point
-                )}
-                label="Rating"
-              />
-            </Panel>
-            <Panel>
-              <h3>A balanced skill set</h3>
-              <p className="muted mt-2 text-xs">
-                Average performance by category
-              </p>
-              {[
-                { name: "Technical", value: overview.technical },
-                { name: "Interpersonal", value: overview.interpersonal },
-              ].map((category) => (
-                <div key={category.name} className="skill-row mt-3">
-                  <div className="flex justify-between text-sm">
-                    <span>{category.name}</span>
-                    <strong>{category.value}%</strong>
-                  </div>
-                  <Progress value={category.value} label={category.name} />
-                </div>
-              ))}
-              <div className="subtle-banner mt-6">
-                <TrendingUp size={17} />
-                <p>
-                  Your React mastery is 84%. Communication is a useful next
-                  focus.
-                </p>
-              </div>
-            </Panel>
-          </div>
-          <div className="two-column section-space">
-            <Panel>
-              <div className="panel-title">
-                <h3>Your strongest skills</h3>
-                <Link href="/assessments" className="text-link">
-                  Explore
-                  <ArrowUpRight size={14} />
-                </Link>
-              </div>
-              {skills.slice(0, 4).map((topic) => (
-                <div className="skill-row" key={topic.slug}>
-                  <div className="flex justify-between text-sm">
-                    <Link href={`/assessments/${topic.slug}`}>
-                      {topic.name}
-                    </Link>
-                    <span>{topic.mastery}%</span>
-                  </div>
-                  <Progress value={topic.mastery} label={topic.name} />
-                </div>
-              ))}
-            </Panel>
-            <Panel>
-              <h3>The details that matter</h3>
-              <div className="metric-grid mt-6 !grid-cols-2 gap-y-7">
-                <Metric
-                  label="Average performance"
-                  value={`${overview.performance}%`}
-                />
-                <Metric
-                  label="Average integrity"
-                  value={`${overview.integrity}%`}
-                />
-                <Metric
-                  label="Response time"
-                  value={`${overview.responseTime}s`}
-                />
-                <Metric
-                  label="Completion"
-                  value="100%"
-                  note="All saved attempts submitted"
-                />
-              </div>
-            </Panel>
-          </div>
-        </TabsContent>
-        <TabsContent value="Skills">
-          <div className="two-column">
-            <Panel>
-              <h3>Skill mastery</h3>
-              <p className="muted mt-2 text-xs">
-                Curated mastery snapshot · Updated by the future scoring API
-              </p>
-              {skills.map((topic) => (
-                <div key={topic.slug} className="skill-row">
-                  <div className="flex justify-between">
-                    <Link href={`/assessments/${topic.slug}`}>
-                      {topic.name}
-                    </Link>
-                    <Badge>
-                      {topic.mastery >= 80
-                        ? "Strongest"
-                        : topic.mastery < 50
-                          ? "Needs practice"
-                          : "Building confidence"}
-                    </Badge>
-                  </div>
-                  <Progress value={topic.mastery} label={topic.name} />
-                </div>
-              ))}
-            </Panel>
-            <Panel>
-              <h3>Performance by level</h3>
-              {["easy", "medium", "competitive"].map((level) => {
-                const matching = attempts.filter((a) => a.difficulty === level)
-                const average = matching.length
-                  ? Math.round(
-                      matching.reduce((sum, a) => sum + a.performance, 0) /
-                        matching.length
-                    )
-                  : 0
-                return (
-                  <div className="skill-row" key={level}>
-                    <div className="flex justify-between text-sm capitalize">
-                      <span>{level}</span>
-                      <span>
-                        {matching.length
-                          ? `${average}% · ${matching.length} attempts`
-                          : "Not attempted"}
-                      </span>
-                    </div>
-                    <Progress value={average} label={level} />
-                  </div>
-                )
-              })}
-              <div className="subtle-banner mt-6">
-                Next.js has the most room to grow at 35% mastery. Start with
-                fundamentals.
-              </div>
-            </Panel>
-          </div>
-        </TabsContent>
-        <TabsContent value="Activity">
-          <Panel>
-            <div className="panel-title">
-              <div>
-                <h3>Showing up adds up.</h3>
-                <p className="muted mt-2 text-xs">
-                  Your saved assessments over the last 12 weeks
-                </p>
-              </div>
-              <Badge>
-                <Flame size={12} />
-                {overview.activity.current}-day streak
-              </Badge>
-            </div>
-            <div className="heatmap" aria-label="Assessment activity heatmap">
-              {Array.from({ length: 84 }, (_, index) => {
-                const date = new Date(Date.UTC(2026, 6, 2 + index))
-                  .toISOString()
-                  .slice(0, 10)
-                const count = attempts.filter((a) =>
-                  a.date.startsWith(date)
-                ).length
-                return (
-                  <div
-                    key={date}
-                    className="heat-cell"
-                    data-level={Math.min(4, count * 2)}
-                    title={`${date}: ${count} assessments`}
-                    role="img"
-                    aria-label={`${date}: ${count} assessments`}
+              <h3>Overall rating history</h3>
+              {performance.data ? (
+                performance.data.ratingHistory.length ? (
+                  <LazyTrend
+                    points={performance.data.ratingHistory.map((p) => ({
+                      label: new Date(p.at).toLocaleDateString("en", {
+                        month: "short",
+                        day: "numeric",
+                        timeZone: "UTC",
+                      }),
+                      value: p.rating,
+                    }))}
+                    label="Rating"
+                  />
+                ) : (
+                  <EmptyState
+                    title="Your story starts here"
+                    description="Complete an assessment to see your rating history."
                   />
                 )
-              })}
-            </div>
-            <div className="muted mt-4 flex justify-between text-xs">
-              <span>July</span>
-              <span>August</span>
-              <span>September</span>
-            </div>
-            <div className="metric-grid mt-8">
-              <Metric
-                label="Active days"
-                value={new Set(attempts.map((a) => a.date.slice(0, 10))).size}
+              ) : (
+                <QueryState
+                  error={performance.error}
+                  retry={performance.refetch}
+                />
+              )}
+            </Panel>
+            <Panel>
+              <h3>Assessment quality</h3>
+              <div className="metric-grid mt-6">
+                <Metric
+                  label="Normalized performance"
+                  value={percent(o.averageNormalizedScore)}
+                />
+                <Metric
+                  label="Weighted answer quality"
+                  value={percent(o.answerQualityPercent)}
+                />
+                <Metric label="Integrity" value={percent(o.averageIntegrity)} />
+                <Metric label="Best performance" value={percent(o.bestScore)} />
+              </div>
+            </Panel>
+          </div>
+          {performance.data && (
+            <Panel className="section-space">
+              <h3>Performance by category and mode</h3>
+              {performance.data.groups.map((g) => (
+                <div className="recent-row" key={`${g.category}:${g.mode}`}>
+                  <div>
+                    <strong>
+                      {g.category} · {g.mode}
+                    </strong>
+                    <span>{g.count} assessments</span>
+                  </div>
+                  <span>{percent(g.performance)} performance</span>
+                </div>
+              ))}
+            </Panel>
+          )}
+        </TabsContent>
+        <TabsContent value="skills">
+          {topics.data ? (
+            topics.data.length ? (
+              <div className="assessment-grid">
+                {topics.data.map((t) => (
+                  <Panel key={t.topic}>
+                    <Link
+                      className="text-link"
+                      href={`/assessments/${t.topic}`}
+                    >
+                      {t.name}
+                    </Link>
+                    <div className="mt-4">
+                      <Progress value={t.mastery} label={`${t.name} mastery`} />
+                    </div>
+                    <div className="metric-grid mt-5">
+                      <Metric label="Mastery" value={percent(t.mastery)} />
+                      <Metric label="Topic rating" value={t.rating} />
+                      <Metric label="Assessments" value={t.assessmentCount} />
+                      <Metric
+                        label="Accuracy"
+                        value={percent(t.accuracyPercent)}
+                      />
+                    </div>
+                  </Panel>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title="No skill results yet"
+                description="Choose your first assessment to start building your profile."
               />
-              <Metric
-                label="Current streak"
-                value={`${overview.activity.current} days`}
+            )
+          ) : (
+            <QueryState error={topics.error} retry={topics.refetch} />
+          )}
+        </TabsContent>
+        <TabsContent value="activity">
+          <Panel>
+            <h3>Activity · UTC</h3>
+            <p className="muted mt-2">
+              {activity.days.length} active days in the last 365 days.
+            </p>
+            {activity.days.length ? (
+              activity.days
+                .slice()
+                .reverse()
+                .map((d) => (
+                  <div className="recent-row" key={d.date}>
+                    <span>{dateTime(d.date)}</span>
+                    <strong>{d.count} completed</strong>
+                  </div>
+                ))
+            ) : (
+              <EmptyState
+                title="Make today your first day"
+                description="Completed assessments appear in your activity."
               />
-              <Metric
-                label="Longest streak"
-                value={`${overview.activity.longest} days`}
-              />
-              <Metric label="Assessments saved" value={attempts.length} />
-            </div>
+            )}
           </Panel>
         </TabsContent>
       </Tabs>
-    </PageEntrance>
+    </>
   )
 }

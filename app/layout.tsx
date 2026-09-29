@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Geist_Mono, Outfit, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import "./palettes.css"
+import { AppProviders } from "@/components/app-providers"
 import { ThemeProvider } from "@/components/theme-provider"
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-sans" })
 const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" })
@@ -34,7 +35,9 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: preferenceScript }} />
       </head>
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <AppProviders>{children}</AppProviders>
+        </ThemeProvider>
       </body>
     </html>
   )

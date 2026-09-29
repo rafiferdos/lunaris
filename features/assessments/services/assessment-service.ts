@@ -1,11 +1,22 @@
-import { topics } from "../data/topics"
-import { questions } from "../data/questions"
-import type { Difficulty } from "../schemas/question"
-export const assessmentService = {
-  list: () => topics,
-  getBySlug: (slug: string) => topics.find((topic) => topic.slug === slug),
-  questions: (slug: string, difficulty: Difficulty) =>
-    questions
-      .filter((q) => q.topic === slug && q.active)
-      .map((q) => ({ ...q, difficulty })),
+import type { Assessment, Mode } from "@/lib/api/types"
+import type { Topic } from "../types/assessment"
+import { topicVisuals } from "../data/topic-visuals"
+export const modeLabels: Record<Mode, string> = {
+  EASY: "Easy",
+  MEDIUM: "Medium",
+  COMPETITIVE: "Competitive",
+}
+export function topicView(assessment: Assessment): Topic {
+  const visual = topicVisuals[assessment.slug]
+  return {
+    slug: assessment.slug,
+    name: assessment.name,
+    description: assessment.description,
+    category:
+      assessment.category === "TECHNICAL" ? "Technical" : "Interpersonal",
+    monogram: visual?.monogram ?? assessment.name.slice(0, 2),
+    accent: visual?.accent ?? "neutral",
+    mastery: Math.round(assessment.progress?.averageNormalizedScore ?? 0),
+    available: assessment.modes.some((m) => m.available),
+  }
 }

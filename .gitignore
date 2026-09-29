@@ -34,3 +34,8 @@ pnpm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/public/vad/
+/playwright-report/
+/test-results/
+!.env.example

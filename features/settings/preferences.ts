@@ -1,44 +1,61 @@
 "use client"
-import { z } from "zod"
-import { useLocalValue, writeLocal } from "@/lib/local-store"
-export const preferenceSchema = z.object({
-  palette: z
-    .enum(["taupe", "neutral", "stone", "zinc", "blue", "green", "rose"])
-    .default("taupe"),
-  radius: z
-    .enum(["sharp", "compact", "default", "soft", "rounded"])
-    .default("default"),
-  density: z.enum(["comfortable", "compact"]).default("comfortable"),
-  reducedMotion: z.boolean().default(false),
-  difficulty: z.enum(["easy", "medium", "competitive"]).default("easy"),
-  timer: z.boolean().default(true),
-  email: z.boolean().default(true),
-  reminders: z.boolean().default(false),
-  publicProfile: z.boolean().default(true),
-  topics: z.array(z.string()).default(["javascript", "react"]),
-})
-export type Preferences = z.infer<typeof preferenceSchema>
-export const defaults = preferenceSchema.parse({})
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useWorkspace } from "@/features/workspace/workspace-provider"
+import { useSession } from "@/features/auth/auth-boundary"
+import { api, unwrap } from "@/lib/api/client"
+import { queries, privateKey } from "@/lib/api/queries"
+import { preferenceSchema, type Preferences } from "./schema"
+export { preferenceSchema, defaults, type Preferences } from "./schema"
+export { applyPreferences, radii } from "./appearance"
 export function usePreferences() {
-  return useLocalValue("lunaris:preferences", defaults, (v) =>
-    preferenceSchema.parse(v)
-  )
+  const { preferences, profile } = useWorkspace()
+  return preferenceSchema.parse({
+    ...preferences,
+    difficulty: preferences.difficulty?.toLowerCase(),
+    topics: profile.preferredTopics,
+  })
 }
-export function setPreferences(preferences: Preferences) {
-  writeLocal("lunaris:preferences", preferences)
-  applyPreferences(preferences)
-}
-export const radii = {
-  sharp: "0rem",
-  compact: "0.3rem",
-  default: "0.625rem",
-  soft: "0.85rem",
-  rounded: "1.1rem",
-}
-export function applyPreferences(p: Preferences) {
-  const root = document.documentElement
-  root.dataset.palette = p.palette
-  root.dataset.density = p.density
-  root.dataset.reducedMotion = String(p.reducedMotion)
-  root.style.setProperty("--radius", radii[p.radius])
+export function useUpdatePreferences() {
+  const { user } = useSession(),
+    client = useQueryClient()
+  return useMutation({
+    scope: { id: "preferences" },
+    mutationFn: async (patch: Partial<Preferences>) => {
+      const { topics, difficulty, ...rest } = patch
+      if (topics)
+        await unwrap(
+          api.PATCH("/api/v1/me", { body: { preferredTopics: topics } })
+        )
+      return (
+        await unwrap(
+          api.PATCH("/api/v1/me/preferences", {
+            body: {
+              ...rest,
+              ...(difficulty
+                ? {
+                    difficulty: (
+                      {
+                        easy: "EASY",
+                        medium: "MEDIUM",
+                        competitive: "COMPETITIVE",
+                      } as const
+                    )[difficulty],
+                  }
+                : {}),
+            },
+          })
+        )
+      ).data
+    },
+    onSuccess: async (data) => {
+      client.setQueryData(queries.preferences(user.id).queryKey, data)
+      await client.invalidateQueries({
+        queryKey: privateKey(user.id),
+        predicate: (query) =>
+          ["profile", "overview", "rankings"].includes(
+            String(query.queryKey[2])
+          ),
+      })
+    },
+  })
 }

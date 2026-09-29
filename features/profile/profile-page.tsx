@@ -1,59 +1,71 @@
 "use client"
-import { Separator } from "@/components/ui/separator"
+import { useState } from "react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { useState } from "react"
-import { MapPin, CalendarDays, Pencil, Check } from "lucide-react"
-import {
-  PageHeader,
-  Panel,
-  Avatar,
-  Metric,
-  Progress,
-} from "@/components/shared/ui"
-import { PageEntrance } from "@/components/shared/motion"
+import { Checkbox } from "@/components/ui/checkbox"
+import { PageHeader, Panel, Avatar, Metric } from "@/components/shared/ui"
 import { Button } from "@/components/ui/button"
-import { writeLocal } from "@/lib/local-store"
-import { useAttempts } from "@/features/history/use-attempts"
-import { statsService } from "@/features/stats/stats-service"
-import { useProfile } from "./use-profile"
-import { profileSchema, type Profile } from "./profile-service"
+import { MutationError } from "@/components/shared/query-state"
+import { useWorkspace } from "@/features/workspace/workspace-provider"
+import { queries, privateKey } from "@/lib/api/queries"
+import { api, unwrap } from "@/lib/api/client"
+import { profileSchema, type ProfileDraft } from "./profile-service"
+import { dateTime } from "@/lib/format"
 export function ProfilePage() {
-  const profile = useProfile()
-  const attempts = useAttempts()
-  const stats = statsService.getOverview(attempts)
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState<Profile>(profile)
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState("")
-  function save(event: React.FormEvent) {
-    event.preventDefault()
+  const { profile, overview, assessments } = useWorkspace(),
+    client = useQueryClient()
+  const [editing, setEditing] = useState(false),
+    [draft, setDraft] = useState<ProfileDraft>({
+      displayName: profile.displayName,
+      username: profile.username ?? "",
+      bio: profile.bio,
+      country: profile.country ?? "",
+      timezone: profile.timezone,
+      preferredTopics: profile.preferredTopics,
+    }),
+    [errors, setErrors] = useState<Record<string, string>>({}),
+    [message, setMessage] = useState("")
+  const mutation = useMutation({
+    mutationFn: async (data: ProfileDraft) =>
+      (
+        await unwrap(
+          api.PATCH("/api/v1/me", {
+            body: {
+              ...data,
+              username: data.username || undefined,
+              country: data.country || null,
+            },
+          })
+        )
+      ).data,
+    onSuccess: async (data) => {
+      client.setQueryData(queries.profile(profile.id).queryKey, data)
+      await client.invalidateQueries({
+        queryKey: privateKey(profile.id),
+        predicate: (q) => q.queryKey[2] === "rankings",
+      })
+      setEditing(false)
+      setMessage("Profile saved to your account.")
+    },
+  })
+  function save(e: React.FormEvent) {
+    e.preventDefault()
     const parsed = profileSchema.safeParse(draft)
     if (!parsed.success) {
       setErrors(
         Object.fromEntries(
-          parsed.error.issues.map((issue) => [
-            issue.path.join("."),
-            issue.message,
-          ])
+          parsed.error.issues.map((i) => [i.path.join("."), i.message])
         )
       )
       return
     }
-    try {
-      writeLocal("lunaris:profile", parsed.data)
-      setEditing(false)
-      setMessage("Profile updated on this device.")
-      setErrors({})
-    } catch {
-      setMessage(
-        "Could not save your profile. Check browser storage permissions."
-      )
-    }
+    setErrors({})
+    mutation.mutate(parsed.data)
   }
   return (
-    <PageEntrance>
+    <>
       <PageHeader
         eyebrow="YOUR PERSONAL WORKSPACE"
         title="My profile"
@@ -62,12 +74,16 @@ export function ProfilePage() {
           <Button
             variant="outline"
             onClick={() => {
-              setDraft(profile)
+              setDraft({
+                ...profile,
+                username: profile.username ?? "",
+                country: profile.country ?? "",
+              })
               setEditing(!editing)
               setErrors({})
+              setMessage("")
             }}
           >
-            <Pencil size={14} />
             {editing ? "Cancel editing" : "Edit profile"}
           </Button>
         }
@@ -75,67 +91,60 @@ export function ProfilePage() {
       <div className="two-column">
         <Panel>
           <div className="flex items-center gap-5">
-            <div className="mx-3 scale-150">
-              <Avatar name={profile.name} />
-            </div>
+            <Avatar name={profile.displayName} />
             <div>
-              <h2>{profile.name}</h2>
-              <p className="muted text-sm">@{profile.username}</p>
+              <h2>{profile.displayName}</h2>
+              <p className="muted">
+                {profile.username ? `@${profile.username}` : profile.email}
+              </p>
             </div>
           </div>
-          <p className="muted mt-7 max-w-lg text-sm leading-7">{profile.bio}</p>
-          <div className="muted mt-5 flex flex-wrap gap-5 text-xs">
-            <span className="flex gap-2">
-              <MapPin size={14} />
-              {profile.country}
-            </span>
-            <span className="flex gap-2">
-              <CalendarDays size={14} />
-              Joined June 2026
-            </span>
-          </div>
-          <Separator className="my-7" />
-          <div className="metric-grid">
-            <Metric label="Rating" value={stats.rating.toLocaleString()} />
-            <Metric label="Global rank" value="#128" />
-            <Metric label="Assessments" value={attempts.length} />
-            <Metric label="Streak" value={`${stats.activity.current} days`} />
+          <p className="mt-6 text-sm leading-7">
+            {profile.bio || "Add a short bio to introduce yourself."}
+          </p>
+          <p className="muted mt-5 text-xs">
+            {profile.country ?? "Country not set"} · {profile.timezone} · Joined{" "}
+            {dateTime(profile.joinedAt)}
+          </p>
+          <div className="metric-grid mt-7">
+            <Metric label="Rating" value={overview.rating} />
+            <Metric
+              label="Global rank"
+              value={overview.rank ? `#${overview.rank}` : "Unranked"}
+            />
+            <Metric label="Assessments" value={overview.assessmentCount} />
+            <Metric label="Streak" value={`${overview.currentStreak} days`} />
           </div>
         </Panel>
         <Panel>
-          <h3>Profile complete</h3>
-          <p className="muted mt-2 mb-5 text-sm">
-            You’re all set. Keep your details current as you grow.
-          </p>
-          <Progress value={100} label="Profile completion" />
-          <div className="positive mt-4 flex gap-2 text-xs">
-            <Check size={14} />
-            All essential details added
-          </div>
-          <Separator className="my-6" />
           <h3>Preferred skill areas</h3>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {profile.skills.split(",").map((skill) => (
-              <span className="badge tone-neutral" key={skill}>
-                {skill.trim()}
-              </span>
-            ))}
+          <div className="mt-5 flex flex-wrap gap-2">
+            {profile.preferredTopics.length ? (
+              profile.preferredTopics.map((t) => (
+                <span className="badge" key={t}>
+                  {assessments.find((a) => a.slug === t)?.name ?? t}
+                </span>
+              ))
+            ) : (
+              <p className="muted">
+                Edit your profile to choose your focus areas.
+              </p>
+            )}
           </div>
+          <p className="muted mt-7 text-sm">Email: {profile.email}</p>
         </Panel>
       </div>
       {editing && (
         <Panel className="section-space">
-          <h2>Edit your details</h2>
-          <form onSubmit={save} className="mt-6" noValidate>
+          <form onSubmit={save} noValidate>
             <div className="form-grid">
               {(
                 [
-                  { key: "name", label: "Display name" },
+                  { key: "displayName", label: "Display name" },
                   { key: "username", label: "Username" },
-                  { key: "email", label: "Email address" },
-                  { key: "country", label: "Country" },
+                  { key: "country", label: "Country code" },
+                  { key: "timezone", label: "Timezone" },
                   { key: "bio", label: "Short bio" },
-                  { key: "skills", label: "Skill areas (comma separated)" },
                 ] as const
               ).map(({ key, label }) => (
                 <Label className="field" key={key}>
@@ -147,33 +156,54 @@ export function ProfilePage() {
                         setDraft({ ...draft, [key]: e.target.value })
                       }
                       aria-invalid={!!errors[key]}
-                      aria-describedby={
-                        errors[key] ? `error-${key}` : undefined
-                      }
                     />
                   ) : (
                     <Input
                       value={draft[key]}
-                      type={key === "email" ? "email" : "text"}
                       onChange={(e) =>
                         setDraft({ ...draft, [key]: e.target.value })
                       }
                       aria-invalid={!!errors[key]}
-                      aria-describedby={
-                        errors[key] ? `error-${key}` : undefined
-                      }
                     />
                   )}{" "}
                   {errors[key] && (
-                    <span className="field-error" id={`error-${key}`}>
+                    <span className="field-error" role="alert">
                       {errors[key]}
                     </span>
                   )}
                 </Label>
               ))}
             </div>
-            <div className="mt-6 flex justify-end">
-              <Button type="submit">Save changes</Button>
+            <fieldset className="mt-6">
+              <legend className="mb-4">Preferred topics</legend>
+              <div className="flex flex-wrap gap-5">
+                {assessments.map((t) => (
+                  <Label key={t.id} className="flex gap-2">
+                    <Checkbox
+                      checked={draft.preferredTopics.includes(t.slug)}
+                      onCheckedChange={(checked) =>
+                        setDraft({
+                          ...draft,
+                          preferredTopics: checked
+                            ? [...draft.preferredTopics, t.slug]
+                            : draft.preferredTopics.filter((s) => s !== t.slug),
+                        })
+                      }
+                    />
+                    {t.name}
+                  </Label>
+                ))}
+              </div>
+            </fieldset>
+            <div className="mt-6">
+              <MutationError error={mutation.error} />
+              <Button
+                className="mt-4"
+                type="submit"
+                disabled={mutation.isPending}
+              >
+                {mutation.isPending ? "Saving…" : "Save changes"}
+              </Button>
             </div>
           </form>
         </Panel>
@@ -183,6 +213,6 @@ export function ProfilePage() {
           {message}
         </p>
       )}
-    </PageEntrance>
+    </>
   )
 }

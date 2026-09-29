@@ -1,9 +1,6 @@
 "use client"
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-} from "@/components/ui/pagination"
+import { useState, useCallback } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   Table,
@@ -13,15 +10,6 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table"
-import { statsService } from "@/features/stats/stats-service"
-import { useState } from "react"
-import {
-  ArrowUpRight,
-  ArrowDownRight,
-  ArrowLeft,
-  ArrowRight,
-  Trophy,
-} from "lucide-react"
 import {
   PageHeader,
   Panel,
@@ -29,254 +17,213 @@ import {
   Metric,
   Select,
   Badge,
+  EmptyState,
 } from "@/components/shared/ui"
-import { PageEntrance } from "@/components/shared/motion"
-import { Button } from "@/components/ui/button"
-import { useUrlFilters } from "@/hooks/use-url-filters"
-import { useProfile } from "@/features/profile/use-profile"
-import { useAttempts } from "@/features/history/use-attempts"
-import { leaderboardService, type RankedUser } from "./leaderboard-service"
+import { QueryState } from "@/components/shared/query-state"
+import { CursorPagination } from "@/components/shared/cursor-pagination"
+import { useWorkspace } from "@/features/workspace/workspace-provider"
+import { useSession } from "@/features/auth/auth-boundary"
+import { queries } from "@/lib/api/queries"
+import type { RankingFilters, RankedUser } from "@/lib/api/types"
+import { percent } from "@/lib/format"
+import { useLiveLeaderboard } from "./use-live-leaderboard"
 export function LeaderboardPage() {
-  const filters = useUrlFilters()
-  const period = filters.get("period", "weekly"),
-    category = filters.get("category", "Overall"),
-    difficulty = filters.get("difficulty", "all"),
-    topic = filters.get("topic", "all")
-  const { users, current, total } = leaderboardService.getLeaderboard({
+  const { assessments } = useWorkspace()
+  const [period, setPeriod] = useState<RankingFilters["period"]>("weekly"),
+    [category, setCategory] = useState<RankingFilters["category"]>("overall"),
+    [mode, setMode] = useState<RankingFilters["mode"]>("all"),
+    [topic, setTopic] = useState("all")
+  const filters: RankingFilters = {
     period,
     category,
-    difficulty,
-    topic,
-  })
-  const profile = useProfile()
-  const attempts = useAttempts()
-  const overview = statsService.getOverview(attempts)
-  const currentUser = {
-    ...current,
-    name: profile.name,
-    username: profile.username,
-    assessments: attempts.length,
-    streak: overview.activity.current,
-    accuracy: overview.accuracy,
-    integrity: overview.integrity,
-    rating: overview.rating,
-    xp: overview.xp,
+    mode,
+    limit: 15,
+    ...(topic !== "all" ? { topic } : {}),
   }
-  const [page, setPage] = useState(0)
   return (
-    <PageEntrance>
+    <>
       <PageHeader
         eyebrow="PROGRESS IN GOOD COMPANY"
         title="The leaderboard"
-        description="Consistent effort adds up. See where you stand."
-        action={
-          <Badge>
-            <Trophy size={12} />
-            {total.toLocaleString()} ranked members
-          </Badge>
-        }
+        description="Earn XP through eligible assessments. Rankings update as results arrive."
       />
       <div className="mb-6 flex flex-wrap justify-between gap-4">
         <ToggleGroup
           aria-label="Ranking period"
-          value={[period]}
-          onValueChange={(values) => {
-            if (values[0]) {
-              filters.set({ period: values[0] })
-              setPage(0)
-            }
+          value={[period ?? "weekly"]}
+          onValueChange={(v) => {
+            if (v[0]) setPeriod(v[0] as RankingFilters["period"])
           }}
         >
-          {["weekly", "monthly", "all-time"].map((value) => (
-            <ToggleGroupItem key={value} value={value} className="capitalize">
-              {value.replace("-", " ")}
+          {["weekly", "monthly", "all_time"].map((p) => (
+            <ToggleGroupItem key={p} value={p}>
+              {p.replace("_", " ")}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
         <div className="flex flex-wrap gap-2">
           <Select
             label="Ranking category"
-            value={category}
-            onChange={(value) => {
-              filters.set({ category: value, topic: "all" })
-              setPage(0)
+            value={category ?? "overall"}
+            onChange={(v) => {
+              setCategory(v as RankingFilters["category"])
+              setTopic("all")
             }}
-            options={["Overall", "Technical", "Interpersonal"]}
+            options={["overall", "technical", "interpersonal"]}
           />
           <Select
             label="Ranking topic"
             value={topic}
-            onChange={(value) => filters.set({ topic: value })}
+            onChange={setTopic}
             options={[
               { value: "all", label: "All topics" },
-              ...(category === "Interpersonal"
-                ? ["communication"]
-                : category === "Technical"
-                  ? ["javascript", "react", "typescript", "nextjs"]
-                  : [
-                      "javascript",
-                      "react",
-                      "typescript",
-                      "nextjs",
-                      "communication",
-                    ]),
+              ...assessments
+                .filter(
+                  (t) =>
+                    category === "overall" ||
+                    t.category.toLowerCase() === category
+                )
+                .map((t) => ({ value: t.slug, label: t.name })),
             ]}
           />
           <Select
-            label="Ranking difficulty"
-            value={difficulty}
-            onChange={(value) => filters.set({ difficulty: value })}
-            options={[
-              { value: "all", label: "All levels" },
-              "easy",
-              "medium",
-              "competitive",
-            ]}
+            label="Ranking mode"
+            value={mode ?? "all"}
+            onChange={(v) => setMode(v as RankingFilters["mode"])}
+            options={["all", "easy", "medium", "competitive"]}
           />
         </div>
       </div>
+      <RankingTable key={JSON.stringify(filters)} filters={filters} />
+    </>
+  )
+}
+function RankingTable({ filters }: { filters: RankingFilters }) {
+  const { user } = useSession(),
+    [cursors, setCursors] = useState<(string | undefined)[]>([undefined])
+  const page = cursors.length - 1
+  const reset = useCallback(() => setCursors([undefined]), []),
+    live = useLiveLeaderboard(reset)
+  const query = useQuery(
+    queries.rankings(user.id, { ...filters, cursor: cursors[page] })
+  )
+  if (!query.data)
+    return <QueryState error={query.error} retry={query.refetch} />
+  const { data: rows, meta } = query.data,
+    current = meta.currentUser
+  return (
+    <>
+      <div className="mb-5 flex justify-between">
+        <Badge tone={live ? "mint" : "amber"}>
+          {live ? "Live updates" : "Reconnecting live updates"}
+        </Badge>
+        <span className="muted text-xs">{meta.total} ranked members</span>
+      </div>
+      {query.error && <QueryState error={query.error} retry={query.refetch} />}
       <div className="top-three">
-        {users.slice(0, 3).map((user) => (
-          <Panel key={user.id} className="top-person">
-            <Avatar name={user.name} />
-            <div>
-              <p className="muted mb-1 text-xs">RANK {user.rank}</p>
-              <h3>{user.name}</h3>
-              <p className="muted mt-1 text-xs">
-                {user.rating.toLocaleString()} rating
-              </p>
-            </div>
-            <span className="rank-number">0{user.rank}</span>
-          </Panel>
-        ))}
+        {page === 0 &&
+          rows.slice(0, 3).map((r) => (
+            <Panel key={r.id} className="top-person">
+              <Avatar name={r.name} />
+              <div>
+                <p className="muted text-xs">RANK {r.rank}</p>
+                <h3>{r.name}</h3>
+                <p>{(r.xp ?? 0).toLocaleString()} XP</p>
+              </div>
+            </Panel>
+          ))}
       </div>
       <Panel className="section-space">
         <div className="metric-grid">
           <Metric
             label="Your position"
-            value={`#${currentUser.rank}`}
-            note="↑ 12 positions this week"
+            value={current ? `#${current.rank}` : "Unranked"}
           />
-          <Metric
-            label="Your rating"
-            value={currentUser.rating.toLocaleString()}
-            note="Separate from assessment points"
-          />
+          <Metric label="Your XP in this period" value={current?.xp ?? 0} />
+          <Metric label="Your rating" value={current?.rating ?? "—"} />
           <Metric
             label="Percentile"
-            value={`Top ${Math.ceil((currentUser.rank / total) * 100)}%`}
-            note={`Among ${total.toLocaleString()} members`}
-          />
-          <Metric
-            label="Your momentum"
-            value={`${overview.activity.current} days`}
-            note="Keep your practice consistent"
+            value={
+              meta.percentile == null
+                ? "—"
+                : `Top ${Math.ceil(meta.percentile)}%`
+            }
           />
         </div>
       </Panel>
       <Panel className="section-space !p-0">
-        <div className="table-scroll">
-          <Table className="ranking-table">
-            <TableHeader>
-              <TableRow>
-                <TableHead>RANK</TableHead>
-                <TableHead>MEMBER</TableHead>
-                <TableHead>RATING</TableHead>
-                <TableHead>XP</TableHead>
-                <TableHead>ACCURACY</TableHead>
-                <TableHead>ASSESSMENTS</TableHead>
-                <TableHead>STREAK</TableHead>
-                <TableHead>INTEGRITY</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.slice(page * 10, page * 10 + 10).map((user) => (
-                <RankingRow key={user.id} user={user} />
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {[
+                "RANK",
+                "MEMBER",
+                "XP",
+                "RATING",
+                "ACCURACY",
+                "ASSESSMENTS",
+                "INTEGRITY",
+              ].map((h) => (
+                <TableHead key={h}>{h}</TableHead>
               ))}
-              <RankingRow user={currentUser} current />
-            </TableBody>
-          </Table>
-        </div>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((r) => (
+              <RankingRow key={r.id} row={r} current={r.id === user.id} />
+            ))}
+            {current && !rows.some((r) => r.id === current.id) && (
+              <RankingRow row={current} current />
+            )}
+          </TableBody>
+        </Table>
       </Panel>
-      <div className="pagination">
-        <span>
-          Ranked by rating · {period.replace("-", " ")} · Mock rankings
-        </span>
-        <Pagination className="m-0 w-auto" aria-label="Leaderboard pages">
-          <PaginationContent>
-            <PaginationItem>
-              <Button
-                variant="outline"
-                aria-label="Previous ranking page"
-                disabled={page === 0}
-                onClick={() => setPage(page - 1)}
-              >
-                <ArrowLeft />
-              </Button>
-            </PaginationItem>
-            <PaginationItem>
-              <span>{page + 1} / 2</span>
-            </PaginationItem>
-            <PaginationItem>
-              <Button
-                variant="outline"
-                aria-label="Next ranking page"
-                disabled={page === 1}
-                onClick={() => setPage(page + 1)}
-              >
-                <ArrowRight />
-              </Button>
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      </div>
-      <p className="muted text-xs">
-        Filters select illustrative ranking snapshots. Easy assessments do not
-        change rating; production eligibility and ranking will be API-owned.
+      {!rows.length && (
+        <EmptyState
+          title="No ranked results yet"
+          description="Complete an eligible assessment, or choose another ranking period."
+        />
+      )}
+      <CursorPagination
+        page={page}
+        pending={query.isFetching}
+        hasNext={!!meta.nextCursor}
+        previous={() => setCursors((c) => c.slice(0, -1))}
+        next={() => setCursors((c) => [...c, meta.nextCursor ?? undefined])}
+      />
+      <p className="muted mt-5 text-xs">
+        Ranked by XP, then rating, performance and assessment count. Live
+        updates return to the first page.
       </p>
-    </PageEntrance>
+    </>
   )
 }
 function RankingRow({
-  user,
+  row: r,
   current = false,
 }: {
-  user: RankedUser
+  row: RankedUser
   current?: boolean
 }) {
   return (
     <TableRow className={current ? "current-user" : ""}>
-      <TableCell>
-        <span className="inline-flex items-center gap-3">
-          <strong>{user.rank}</strong>
-          <span className={user.movement > 0 ? "positive" : "muted"}>
-            {user.movement > 0 ? (
-              <ArrowUpRight size={13} />
-            ) : (
-              <ArrowDownRight size={13} />
-            )}
-          </span>
-        </span>
-      </TableCell>
+      <TableCell>{r.rank}</TableCell>
       <TableCell>
         <div className="flex items-center gap-3">
-          <Avatar name={user.name} small />
+          <Avatar name={r.name} small />
           <div>
             <strong>
-              {user.name} {current && <Badge tone="mint">You</Badge>}
+              {r.name} {current && <Badge tone="mint">You</Badge>}
             </strong>
-            <p className="muted text-xs">@{user.username}</p>
+            {r.username && <p className="muted text-xs">@{r.username}</p>}
           </div>
         </div>
       </TableCell>
-      <TableCell>
-        <strong>{user.rating.toLocaleString()}</strong>
-      </TableCell>
-      <TableCell className="muted">{user.xp.toLocaleString()}</TableCell>
-      <TableCell>{user.accuracy}%</TableCell>
-      <TableCell>{user.assessments}</TableCell>
-      <TableCell>{user.streak} days</TableCell>
-      <TableCell>{user.integrity}%</TableCell>
+      <TableCell>{r.xp}</TableCell>
+      <TableCell>{r.rating}</TableCell>
+      <TableCell>{percent(r.accuracy)}</TableCell>
+      <TableCell>{r.assessments}</TableCell>
+      <TableCell>{percent(r.integrity)}</TableCell>
     </TableRow>
   )
 }

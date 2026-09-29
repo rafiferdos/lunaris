@@ -1,443 +1,389 @@
 "use client"
+import { useState, useEffect, useCallback } from "react"
+import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { z } from "zod"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Checkbox } from "@/components/ui/checkbox"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Separator } from "@/components/ui/separator"
-import { useCallback, useEffect, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
 import {
-  ArrowLeft,
-  ArrowRight,
-  Clock3,
-  ShieldCheck,
-  CheckCircle2,
-  Maximize2,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge, Panel, PageHeader, Progress } from "@/components/shared/ui"
-import { CodeBlock } from "@/components/shared/code-block"
-import { ConfirmDialog } from "@/components/shared/confirm-dialog"
+  PageHeader,
+  Panel,
+  Badge,
+  Progress,
+  EmptyState,
+} from "@/components/shared/ui"
+import { QueryState, MutationError } from "@/components/shared/query-state"
+import { useWorkspace } from "@/features/workspace/workspace-provider"
+import { useSession } from "@/features/auth/auth-boundary"
+import { queries, invalidateProgress } from "@/lib/api/queries"
+import { api, unwrap, errorMessage } from "@/lib/api/client"
+import type { ServerAttempt, Mode, IntegrityEvent } from "@/lib/api/types"
+import { useAttemptLease } from "../hooks/use-attempt-lease"
+import { useAttemptActions } from "../hooks/use-attempt-actions"
+import { useCountdown } from "../hooks/use-countdown"
+import { startKey, getStartRequestKey } from "../hooks/start-request"
 import { useIntegrity } from "@/features/integrity/use-integrity"
-import {
-  saveAttempt,
-  useAttempts,
-  attemptAvailability,
-} from "@/features/history/use-attempts"
-import { usePreferences } from "@/features/settings/preferences"
-import { levels, attemptLimits } from "../data/levels"
-import type { Question, Difficulty } from "../schemas/question"
-import type { Topic, Answer } from "../types/assessment"
-import { scoreAttempt } from "../utils/scoring"
-export function Quiz({
-  topic,
-  questions,
-  difficulty,
-}: {
-  topic: Topic
-  questions: Question[]
-  difficulty: Difficulty
-}) {
-  const router = useRouter()
-  const level = levels[difficulty]
-  const preferences = usePreferences()
-  const attempts = useAttempts()
-  const availability = attemptAvailability(attempts)
-  const [started, setStarted] = useState(false)
-  const [consent, setConsent] = useState(false)
-  const [index, setIndex] = useState(0)
-  const [answers, setAnswers] = useState<Answer[]>([])
-  const [remaining, setRemaining] = useState(level.seconds)
-  const [confirm, setConfirm] = useState(false)
-  const [error, setError] = useState("")
-  const [finished, setFinished] = useState(false)
-  const clock = useRef(0)
-  const deadline = useRef(0)
-  const submitting = useRef(false)
-  const integrity = useIntegrity(
-    started && !finished && consent,
-    difficulty === "competitive"
+import { useSpeechMonitor } from "@/features/integrity/use-speech-monitor"
+import { QuestionStep } from "./question-step"
+import { modeLabels } from "../services/assessment-service"
+export function Quiz({ slug }: { slug: string }) {
+  const search = useSearchParams(),
+    id = search.get("attempt"),
+    level = search.get("level") ?? "easy"
+  if (id && !z.uuid().safeParse(id).success)
+    return (
+      <EmptyState
+        title="Invalid attempt"
+        description="Open your saved assessment from history."
+      />
+    )
+  if (id) return <AttemptSession key={id} id={id} slug={slug} />
+  const mode = (
+    { easy: "EASY", medium: "MEDIUM", competitive: "COMPETITIVE" } as const
+  )[level as "easy" | "medium" | "competitive"]
+  if (!mode)
+    return (
+      <EmptyState
+        title="Unknown assessment mode"
+        description="Choose a level from the assessment details."
+      />
+    )
+  return <StartAssessment slug={slug} mode={mode} />
+}
+function StartAssessment({ slug, mode }: { slug: string; mode: Mode }) {
+  const { assessments } = useWorkspace(),
+    { user } = useSession(),
+    router = useRouter(),
+    client = useQueryClient()
+  const [consent, setConsent] = useState(false),
+    [error, setError] = useState("")
+  const topic = assessments.find((t) => t.slug === slug),
+    policy = topic?.modes.find((m) => m.mode === mode)
+  const active = useQuery(
+    queries.history(user.id, { status: "IN_PROGRESS", limit: 1 })
   )
-  const question = questions[index]
-  const selected =
-    answers.find((a) => a.questionId === question.id)?.selected ?? []
-  const capture = useCallback(() => {
-    const seconds = Math.max(0, Math.round((Date.now() - clock.current) / 1000))
-    clock.current = Date.now()
-    return answers.some((a) => a.questionId === question.id)
-      ? answers.map((a) =>
-          a.questionId === question.id
-            ? { ...a, seconds: a.seconds + seconds }
-            : a
+  const start = useMutation({
+    mutationFn: async () => {
+      const key = startKey(user.id, slug, mode),
+        requestKey = getStartRequestKey(key, sessionStorage)
+      return (
+        await unwrap(
+          api.POST("/api/v1/attempts", {
+            body: { topicSlug: slug, mode, requestKey },
+          })
         )
-      : [...answers, { questionId: question.id, selected: [], seconds }]
-  }, [answers, question.id])
-  const submit = useCallback(() => {
-    if (submitting.current) return
-    submitting.current = true
-    try {
-      const finalAnswers = capture()
-      const attempt = scoreAttempt(
-        topic,
-        difficulty,
-        questions,
-        finalAnswers,
-        integrity.score
+      ).data
+    },
+    onSuccess: async (attempt) => {
+      client.setQueryData(
+        queries.attempt(user.id, attempt.id).queryKey,
+        attempt
       )
-      saveAttempt(attempt)
-      setFinished(true)
-      setStarted(false)
-      if (document.fullscreenElement)
-        void document.exitFullscreen().catch(() => {})
-      router.push(`/results/${attempt.id}`)
-    } catch {
-      setError(
-        "Your result could not be saved. Allow browser storage, then try submitting again."
-      )
-      submitting.current = false
-      setConfirm(false)
-    }
-  }, [capture, difficulty, integrity.score, questions, router, topic])
-  useEffect(() => {
-    if (!started || finished) return
-    const timer = window.setInterval(() => {
-      const seconds = Math.max(
-        0,
-        Math.ceil((deadline.current - Date.now()) / 1000)
-      )
-      setRemaining(seconds)
-      if (
-        seconds === 0 ||
-        integrity.events.warnings >= attemptLimits.violationThreshold
-      )
-        submit()
-    }, 1000)
-    const unload = (event: BeforeUnloadEvent) => {
-      event.preventDefault()
-    }
-    window.addEventListener("beforeunload", unload)
-    return () => {
-      clearInterval(timer)
-      window.removeEventListener("beforeunload", unload)
-    }
-  }, [started, finished, integrity.events.warnings, submit])
-  async function start() {
+      sessionStorage.removeItem(startKey(user.id, slug, mode))
+      router.replace(`/assessments/${slug}/take?attempt=${attempt.id}`)
+      await invalidateProgress(client, user.id)
+    },
+  })
+  async function begin() {
     setError("")
-    if (difficulty === "competitive") {
+    if (mode === "COMPETITIVE" && !document.fullscreenElement) {
       try {
         await document.documentElement.requestFullscreen()
       } catch {
         setError(
-          "Fullscreen is unavailable in this browser. Use a supported browser or choose Easy or Medium."
+          "Fullscreen is unavailable. Use a supported browser or choose another mode."
         )
         return
       }
     }
-    clock.current = Date.now()
-    deadline.current = Date.now() + level.seconds * 1000
-    setStarted(true)
+    start.mutate()
   }
-  function choose(id: string) {
-    const next =
-      question.type === "multiple"
-        ? selected.includes(id)
-          ? selected.filter((value) => value !== id)
-          : [...selected, id]
-        : [id]
-    setAnswers((previous) => [
-      ...previous.filter((a) => a.questionId !== question.id),
-      {
-        questionId: question.id,
-        selected: next,
-        seconds:
-          previous.find((a) => a.questionId === question.id)?.seconds ?? 0,
-      },
-    ])
-  }
-  function navigate(next: number) {
-    setAnswers(capture())
-    setIndex(next)
-  }
-  if (!started)
+  if (!topic || !policy)
     return (
-      <div className="quiz-layout">
-        <Link href={`/assessments/${topic.slug}`} className="text-link mb-7">
-          <ArrowLeft size={14} />
-          Back to {topic.name}
-        </Link>
-        <PageHeader
-          eyebrow="BEFORE YOU BEGIN"
-          title={`${topic.name} · ${level.name}`}
-          description="A few minutes of focus. A clearer picture of your skills."
-        />
-        <Panel>
-          <div className="metric-grid">
-            <div>
-              <h3>{questions.length} questions</h3>
-              <p className="muted mt-1 text-xs">A curated demo set</p>
-            </div>
-            <div>
-              <h3>{level.seconds / 60} minutes</h3>
-              <p className="muted mt-1 text-xs">Submits when time ends</p>
-            </div>
-          </div>
-          <Separator className="my-6" />
-          <h3 className="flex items-center gap-2">
-            <ShieldCheck size={18} />A fair assessment for everyone
-          </h3>
-          <ul className="muted mt-5 mb-6 space-y-3 text-sm">
-            <li>
-              •{" "}
-              {level.previous
-                ? "You can revisit answers before submitting."
-                : "Competitive mode only allows forward navigation."}
-            </li>
-            <li>
-              •{" "}
-              {difficulty === "competitive"
-                ? "Fullscreen and focus monitoring are required for this demo."
-                : "Focus monitoring is optional in this mode."}
-            </li>
-            <li>
-              • With monitoring on, tab switches, focus loss, and fullscreen
-              exits count as warnings.
-            </li>
-            <li>
-              • After {attemptLimits.violationThreshold} warnings, your answers
-              are automatically submitted.
-            </li>
-            <li>
-              • Microphone and speech detection are not active in this frontend
-              preview. No audio is recorded.
-            </li>
-            <li>
-              • All three levels currently use the same short question set;
-              timing and demo scoring differ.
-            </li>
-          </ul>
-          <Label
-            htmlFor="integrity-consent"
-            className="flex items-start gap-3 text-sm"
-          >
-            <Checkbox
-              id="integrity-consent"
-              checked={consent}
-              onCheckedChange={(checked) => setConsent(checked === true)}
-              className="mt-1"
-            />
-            <span>
-              {difficulty === "competitive"
-                ? "I agree to fullscreen and browser focus monitoring for this attempt."
-                : "Enable browser focus monitoring for this attempt (optional)."}
-            </span>
-          </Label>
-          {error && (
-            <Alert variant="destructive" className="mt-4">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          {availability.locked && (
-            <p className="form-message mt-5">
-              Your daily attempt is complete. Come back tomorrow.
-            </p>
-          )}
-          <div className="mt-7 flex justify-end">
-            <Button
-              size="lg"
-              disabled={
-                availability.locked ||
-                (difficulty === "competitive" && !consent)
-              }
-              onClick={start}
-            >
-              Start assessment
-              <ArrowRight />
-            </Button>
-          </div>
-        </Panel>
-      </div>
+      <EmptyState
+        title="Assessment unavailable"
+        description="Choose an available topic from the catalog."
+      />
     )
+  const existing = active.data?.data[0]
   return (
     <div className="quiz-layout">
-      <div className="mb-7 flex items-start justify-between gap-4">
+      <Link href={`/assessments/${slug}`} className="text-link mb-7">
+        Back to {topic.name}
+      </Link>
+      <PageHeader
+        eyebrow="BEFORE YOU BEGIN"
+        title={`${topic.name} · ${modeLabels[mode]}`}
+        description="A few minutes of focus. A clearer picture of your skills."
+      />
+      <Panel>
+        <div className="metric-grid">
+          <div>
+            <h3>{policy.questionCount} questions</h3>
+            <p className="muted mt-1">Selected for this mode</p>
+          </div>
+          <div>
+            <h3>{Math.round(policy.durationSeconds / 60)} minutes</h3>
+            <p className="muted mt-1">Server-enforced timer</p>
+          </div>
+        </div>
+        <h3 className="mt-7">A fair assessment for everyone</h3>
+        <ul className="muted my-5 space-y-3 text-sm">
+          <li>
+            Starting consumes one attempt. Closing the page does not refund it.
+          </li>
+          <li>
+            {policy.editable
+              ? "Answers autosave and can be edited before submission."
+              : "Answers are committed when you continue and cannot be changed."}
+          </li>
+          <li>
+            Skipped questions receive the lowest score, including negative marks
+            where configured.
+          </li>
+          <li>
+            {mode === "COMPETITIVE"
+              ? "Leaving this tab immediately submits your saved answers and removes ranked rewards."
+              : "Focus changes are sent as integrity signals."}
+          </li>
+          <li>
+            You may enable local speech monitoring during the assessment. Only
+            activity summaries are sent; audio is never uploaded or stored.
+          </li>
+        </ul>
+        <Label className="flex gap-3">
+          <Checkbox
+            checked={consent}
+            onCheckedChange={(v) => setConsent(v === true)}
+          />
+          I understand the assessment rules and focus monitoring.
+        </Label>
+        {existing ? (
+          <Alert className="mt-5">
+            <AlertDescription>
+              You have an active assessment.{" "}
+              <Link
+                className="underline"
+                href={`/assessments/${existing.topic}/take?attempt=${existing.id}`}
+              >
+                Resume {existing.topicName}
+              </Link>
+            </AlertDescription>
+          </Alert>
+        ) : null}
+        {error && (
+          <Alert className="mt-5" variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        <MutationError error={start.error} />
+        <Button
+          className="mt-6"
+          onClick={() => void begin()}
+          disabled={
+            !consent ||
+            start.isPending ||
+            !policy.available ||
+            (!topic.availability.canStart && !start.isError) ||
+            !!existing
+          }
+        >
+          {start.isPending
+            ? "Starting…"
+            : start.isError
+              ? "Retry start"
+              : "Start assessment"}
+        </Button>
+        {!topic.availability.canStart && (
+          <p className="muted mt-4">
+            Your attempt quota is used. Resume an active attempt or wait for the
+            next UTC reset.
+          </p>
+        )}
+      </Panel>
+    </div>
+  )
+}
+function AttemptSession({ id, slug }: { id: string; slug: string }) {
+  const { user } = useSession(),
+    router = useRouter(),
+    client = useQueryClient()
+  const query = useQuery({
+    ...queries.attempt(user.id, id),
+    refetchInterval: (q) =>
+      q.state.data?.status === "IN_PROGRESS" ? 15_000 : false,
+  })
+  useEffect(() => {
+    if (query.data && query.data.status !== "IN_PROGRESS") {
+      void invalidateProgress(client, user.id)
+      if (document.fullscreenElement)
+        void document.exitFullscreen().catch(() => {})
+      router.replace(`/results/${id}`)
+    }
+  }, [query.data, router, id, client, user.id])
+  if (!query.data)
+    return <QueryState error={query.error} retry={query.refetch} />
+  if (query.data.topic.slug !== slug)
+    return (
+      <EmptyState
+        title="Attempt does not match this topic"
+        description="Open this assessment from your history."
+      />
+    )
+  if (query.data.status !== "IN_PROGRESS")
+    return <QueryState label="Opening your result" />
+  return <LeasedAttempt attempt={query.data} receivedAt={query.dataUpdatedAt} />
+}
+function LeasedAttempt({
+  attempt,
+  receivedAt,
+}: {
+  attempt: ServerAttempt
+  receivedAt: number
+}) {
+  const lease = useAttemptLease(attempt.id)
+  if (lease.state === "checking")
+    return <QueryState label="Opening this assessment" />
+  if (lease.state === "blocked")
+    return (
+      <Panel>
+        <h2>This attempt is open in another tab</h2>
+        <p className="muted mt-3">
+          Use that tab, or close it before resuming here.
+        </p>
+        <Button className="mt-5" onClick={lease.retry}>
+          Resume here
+        </Button>
+      </Panel>
+    )
+  return <ActiveAttempt attempt={attempt} receivedAt={receivedAt} />
+}
+function ActiveAttempt({
+  attempt,
+  receivedAt,
+}: {
+  attempt: ServerAttempt
+  receivedAt: number
+}) {
+  const [index, setIndex] = useState(() =>
+    Math.min(
+      attempt.currentPosition +
+        (attempt.questions[attempt.currentPosition]?.answered &&
+        !attempt.policy.backNavigation
+          ? 1
+          : 0),
+      attempt.questions.length - 1
+    )
+  )
+  const [initialSequence] = useState(attempt.nextIntegritySequence)
+  const actions = useAttemptActions(attempt.id)
+  const { send } = actions
+  const sendEvent = useCallback(
+    (event: IntegrityEvent) => send({ type: "event", event }),
+    [send]
+  )
+  const integrity = useIntegrity(true, attempt.id, initialSequence, sendEvent),
+    mic = useSpeechMonitor(true)
+  const remaining = useCountdown(
+    attempt.expiresAt,
+    attempt.serverTime,
+    receivedAt
+  )
+  const { user } = useSession(),
+    client = useQueryClient()
+  useEffect(() => {
+    if (remaining === 0)
+      void client.invalidateQueries({
+        queryKey: queries.attempt(user.id, attempt.id).queryKey,
+      })
+  }, [remaining, client, user.id, attempt.id])
+  const question = attempt.questions[index]
+  const save = useCallback(
+    (selected: string[], responseTimeMs: number) =>
+      send({
+        type: "answer",
+        questionId: question.id,
+        selected,
+        responseTimeMs,
+      }),
+    [send, question.id]
+  )
+  const [fullscreenError, setFullscreenError] = useState("")
+  async function fullscreen() {
+    try {
+      await document.documentElement.requestFullscreen()
+      setFullscreenError("")
+    } catch (e) {
+      setFullscreenError(errorMessage(e))
+    }
+  }
+  return (
+    <div className="quiz-layout">
+      <div className="quiz-topline">
         <div>
-          <p className="eyebrow">{level.name.toUpperCase()} ASSESSMENT</p>
-          <h1>{topic.name}</h1>
+          <p className="eyebrow">{modeLabels[attempt.mode]}</p>
+          <h1>{attempt.topic.name}</h1>
         </div>
-        <div className="text-right">
-          <Badge tone={integrity.score > 90 ? "mint" : "amber"}>
-            <ShieldCheck size={12} />
-            {consent
-              ? integrity.score > 90
-                ? "Excellent"
-                : integrity.score > 80
-                  ? "Good"
-                  : "At risk"
-              : "Monitoring off"}
-          </Badge>
-          {(preferences.timer || difficulty === "competitive") && (
-            <p className="mt-3 flex items-center justify-end gap-2 font-mono text-sm">
-              <Clock3 size={14} />
-              {Math.floor(remaining / 60)}:
-              {String(remaining % 60).padStart(2, "0")}
-            </p>
-          )}
-        </div>
-      </div>
-      <div className="muted mb-3 flex justify-between text-xs">
-        <span>
-          Question {index + 1} of {questions.length}
-        </span>
-        <span>{answers.filter((a) => a.selected.length).length} answered</span>
+        <Badge>
+          {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, "0")}{" "}
+          remaining
+        </Badge>
       </div>
       <Progress
-        value={((index + 1) / questions.length) * 100}
-        label="Assessment progress"
+        value={((index + 1) / attempt.questionCount) * 100}
+        label="Question progress"
       />
-      {integrity.warning && (
-        <Alert className="mt-5 flex flex-wrap items-center gap-3">
-          <div className="flex-1">
-            {integrity.warning} Warning {integrity.events.warnings} of{" "}
-            {attemptLimits.violationThreshold}.
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => {
-              integrity.dismiss()
-              if (difficulty === "competitive" && !document.fullscreenElement)
-                void document.documentElement
-                  .requestFullscreen()
-                  .catch(() => setError("Fullscreen could not be restored."))
-            }}
-          >
-            {difficulty === "competitive" ? <Maximize2 /> : <CheckCircle2 />}
-            Continue
-          </Button>
-        </Alert>
-      )}
-      <Panel className="mt-6">
-        <Badge>
-          {question.type === "multiple"
-            ? "SELECT ALL THAT APPLY"
-            : question.type === "weighted"
-              ? "CHOOSE THE BEST RESPONSE"
-              : "SELECT ONE ANSWER"}
-        </Badge>
-        <h2 className="quiz-question">{question.prompt}</h2>
-        {question.context && <p className="muted mb-5">{question.context}</p>}
-        {question.code && (
-          <CodeBlock code={question.code} language={question.language} />
-        )}
-        {question.type === "multiple" ? (
-          <fieldset>
-            <legend className="sr-only">
-              Answer choices: select all that apply
-            </legend>
-            {question.options.map((option, i) => (
-              <Label
-                key={option.id}
-                htmlFor={`${question.id}-${option.id}`}
-                className="answer-option"
-              >
-                <Checkbox
-                  id={`${question.id}-${option.id}`}
-                  checked={selected.includes(option.id)}
-                  onCheckedChange={() => choose(option.id)}
-                />
-                <span>{option.text}</span>
-                <span className="answer-key">
-                  {String.fromCharCode(65 + i)}
-                </span>
-              </Label>
-            ))}
-          </fieldset>
-        ) : (
-          <RadioGroup
-            key={question.id}
-            aria-label="Answer choices"
-            value={selected[0] ?? ""}
-            onValueChange={choose}
-          >
-            {question.options.map((option, i) => (
-              <Label
-                key={option.id}
-                htmlFor={`${question.id}-${option.id}`}
-                className="answer-option"
-              >
-                <RadioGroupItem
-                  id={`${question.id}-${option.id}`}
-                  value={option.id}
-                />
-                <span>{option.text}</span>
-                <span className="answer-key">
-                  {String.fromCharCode(65 + i)}
-                </span>
-              </Label>
-            ))}
-          </RadioGroup>
-        )}
-        <div className="quiz-controls">
-          <Button
-            variant="outline"
-            disabled={!level.previous || index === 0}
-            onClick={() => navigate(index - 1)}
-          >
-            <ArrowLeft />
-            Previous
-          </Button>
-          <span className="muted hidden text-xs sm:inline">
-            Answers save when you submit.
-          </span>
-          {index < questions.length - 1 ? (
-            <Button onClick={() => navigate(index + 1)}>
-              Next question
-              <ArrowRight />
-            </Button>
-          ) : (
-            <Button onClick={() => setConfirm(true)}>
-              Submit assessment
-              <CheckCircle2 />
-            </Button>
-          )}
-        </div>
-      </Panel>
-      <div className="quiz-controls">
-        <div className="question-nav" aria-label="Question navigation">
-          {questions.map((q, i) => (
-            <Button
-              variant="outline"
-              size="icon"
-              key={q.id}
-              disabled={!level.previous && i !== index}
-              aria-label={`Question ${i + 1}`}
-              aria-current={index === i}
-              data-answered={Boolean(
-                answers.find((a) => a.questionId === q.id)?.selected.length
-              )}
-              onClick={() => navigate(i)}
-            >
-              {i + 1}
-            </Button>
-          ))}
-        </div>
+      <div className="my-5 flex flex-wrap items-center gap-3">
+        <Badge>Integrity {attempt.integrity.score}%</Badge>
+        <Button variant="outline" size="sm" onClick={() => void fullscreen()}>
+          Restore fullscreen
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={mic.status === "ready" || mic.status === "loading"}
+          onClick={() => void mic.enable()}
+        >
+          {mic.status === "ready"
+            ? "Microphone monitoring active"
+            : mic.status === "loading"
+              ? "Starting microphone…"
+              : "Enable local speech monitoring"}
+        </Button>
         <span className="muted text-xs">
-          Demo session · No audio monitoring
+          {mic.status === "unavailable"
+            ? "Microphone unavailable. No automatic misconduct penalty."
+            : "No audio is uploaded."}
         </span>
       </div>
-      {error && (
-        <Alert variant="destructive" className="mt-4">
-          <AlertDescription>{error}</AlertDescription>
+      {fullscreenError && <p role="alert">{fullscreenError}</p>}
+      {(integrity.warning || integrity.error) && (
+        <Alert className="mb-5">
+          <AlertDescription>
+            {integrity.error || integrity.warning}
+          </AlertDescription>
         </Alert>
       )}
-      <ConfirmDialog
-        open={confirm}
-        onClose={() => setConfirm(false)}
-        onConfirm={submit}
-        title="Ready to submit?"
-        description={`${answers.filter((a) => a.selected.length).length} of ${questions.length} questions answered. Unanswered questions receive zero points. Your answers cannot be changed after submission.`}
-        confirmLabel="Submit assessment"
+      <QuestionStep
+        key={question.id}
+        question={question}
+        index={index}
+        total={attempt.questionCount}
+        editable={attempt.policy.editable}
+        backNavigation={attempt.policy.backNavigation}
+        disabled={remaining === 0}
+        save={save}
+        navigate={setIndex}
+        submit={() => send({ type: "submit" })}
       />
+      <MutationError error={actions.error} />
+      <p className="muted mt-5 text-xs">
+        Question and option order are saved. You can resume this attempt from
+        history before its deadline.
+      </p>
     </div>
   )
 }

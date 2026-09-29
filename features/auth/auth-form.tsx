@@ -2,6 +2,9 @@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { authenticate, sessionOptions, safeReturnTo } from "./session"
+import { MutationError } from "@/components/shared/query-state"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { z } from "zod"
@@ -9,7 +12,7 @@ import { Orbit, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 const authSchema = z.object({
   email: z.email("Enter a valid email address."),
-  password: z.string().min(8, "Use at least 8 characters."),
+  password: z.string().min(12, "Use at least 12 characters.").max(128),
   name: z.string().min(2, "Enter your name.").optional(),
 })
 export function AuthForm({
@@ -18,6 +21,22 @@ export function AuthForm({
   mode: "login" | "register" | "forgot-password"
 }) {
   const router = useRouter()
+  const client = useQueryClient()
+  const mutation = useMutation({
+    mutationFn: (body: { email: string; password: string; name?: string }) =>
+      authenticate(
+        mode === "register" ? "sign-up/email" : "sign-in/email",
+        body
+      ),
+    onSuccess: async () => {
+      await client.cancelQueries()
+      client.clear()
+      await client.fetchQuery(sessionOptions)
+      router.replace(
+        safeReturnTo(new URLSearchParams(window.location.search).get("next"))
+      )
+    },
+  })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState("")
   const forgot = mode === "forgot-password",
@@ -46,11 +65,18 @@ export function AuthForm({
     setErrors({})
     if (forgot) {
       setMessage(
-        "Reset preview complete. No email was sent because this workspace uses mock authentication."
+        "Password recovery is not available yet. Contact your workspace administrator for help."
       )
       return
     }
-    router.push("/assessments")
+    if (!forgot)
+      mutation.mutate(
+        authSchema.parse({
+          email: values.get("email"),
+          password: values.get("password"),
+          ...(register ? { name: values.get("name") } : {}),
+        })
+      )
   }
   return (
     <div className="auth-layout">
@@ -115,7 +141,7 @@ export function AuthForm({
           </h1>
           <p className="muted mt-3 text-sm">
             {forgot
-              ? "Enter your email to preview password recovery."
+              ? "Contact your administrator if you cannot access your account."
               : register
                 ? "Create your workspace and start with what matters."
                 : "Sign in to your personal workspace."}
@@ -143,11 +169,12 @@ export function AuthForm({
                 Forgot password?
               </Link>
             )}
-            <Button type="submit" size="lg">
+            <MutationError error={mutation.error} />
+            <Button type="submit" size="lg" disabled={mutation.isPending}>
               {forgot
-                ? "Preview reset request"
+                ? "Recovery information"
                 : register
-                  ? "Create demo account"
+                  ? "Create account"
                   : "Sign in"}
               <ArrowRight />
             </Button>
@@ -176,15 +203,6 @@ export function AuthForm({
               </>
             )}
           </p>
-          <div className="mt-8 border-t pt-5">
-            <p className="muted text-xs leading-6">
-              Frontend preview. Authentication is simulated; entered credentials
-              are never stored or sent. Demo actions use the same sample member.
-            </p>
-            <Link href="/assessments" className="text-link mt-3">
-              Explore the demo without signing in <ArrowRight size={13} />
-            </Link>
-          </div>
         </div>
       </main>
     </div>
