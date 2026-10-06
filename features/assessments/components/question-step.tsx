@@ -219,7 +219,7 @@ export function QuestionStep({
             className="mt-3"
             variant="ghost"
             size="sm"
-            disabled={disabled || busy}
+            disabled={disabled || busy || navigating}
             onClick={() => {
               select([])
             }}
@@ -230,7 +230,9 @@ export function QuestionStep({
         <div className="quiz-controls">
           <Button
             variant="outline"
-            disabled={!backNavigation || index === 0 || busy || disabled}
+            disabled={
+              !backNavigation || index === 0 || busy || disabled || navigating
+            }
             onClick={() => void act(index - 1)}
           >
             Previous
@@ -242,7 +244,7 @@ export function QuestionStep({
                 ? status
                 : "Commits when you continue"}
           </span>
-          <Button disabled={busy || disabled} onClick={next}>
+          <Button disabled={busy || disabled || navigating} onClick={next}>
             {busy
               ? "Saving…"
               : index === total - 1

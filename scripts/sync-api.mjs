@@ -1,4 +1,5 @@
 import { writeFile, rename } from "node:fs/promises"
+import { format, resolveConfig } from "prettier"
 const origin = new URL(
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"
 )
@@ -11,6 +12,9 @@ if (!schema.openapi || !schema.paths?.["/api/v1/attempts"])
   throw new Error("Unexpected API contract")
 await writeFile(
   "lib/api/openapi.json.tmp",
-  JSON.stringify(schema, null, 2) + "\n"
+  await format(JSON.stringify(schema), {
+    ...(await resolveConfig("lib/api/openapi.json")),
+    parser: "json",
+  })
 )
 await rename("lib/api/openapi.json.tmp", "lib/api/openapi.json")

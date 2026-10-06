@@ -149,6 +149,22 @@ test("signup, autosave, reload, finalize, profile, preferences and logout", asyn
     await expect(
       page.getByRole("heading", { name: heading, exact: true })
     ).toBeVisible()
+    if (path === "/stats") {
+      await expect(page.locator(".recharts-surface")).toBeVisible()
+      await page.screenshot({
+        path: "test-results/populated-stats.png",
+        fullPage: true,
+      })
+      for (const tab of ["Skills", "Activity"]) {
+        await page.getByRole("tab", { name: tab, exact: true }).click()
+        await expect(
+          page.getByRole("tabpanel", { name: tab, exact: true })
+        ).toBeVisible()
+        await expect(
+          page.getByRole("tabpanel", { name: tab, exact: true })
+        ).not.toBeEmpty()
+      }
+    }
   }
   await expect(page.getByText("Live updates", { exact: true })).toBeVisible()
   await page.goto("/profile")
@@ -348,6 +364,7 @@ test("admin validates and imports JSON through the real API", async ({
     .getByRole("button", { name: "Update publication", exact: true })
     .click()
   expect((await saved).ok()).toBeTruthy()
+  await expect(page.getByRole("alertdialog")).toHaveCount(0)
   await expect(
     page.getByText("Publication updated.", { exact: true })
   ).toBeVisible()
@@ -590,7 +607,7 @@ test("activity errors do not block profile or an assessment and timer preference
   )
   await page
     .getByRole("switch", { name: "Show the timer", exact: true })
-    .uncheck()
+    .click()
   expect((await saved).ok()).toBeTruthy()
   await expect(
     page.getByRole("switch", { name: "Show the timer", exact: true })
@@ -679,4 +696,197 @@ test("visual and accessibility audit of all workspace routes in light/dark and m
     JSON.stringify(failures, null, 2)
   )
   expect(failures).toEqual([])
+})
+
+test("auth, preflight, answer controls and result meet accessibility checks", async ({
+  page,
+}) => {
+  test.setTimeout(180_000)
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  const check = async (name: string) => {
+    await page.evaluate(() => document.fonts.ready)
+    const result = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+      .analyze()
+    await page.screenshot({
+      path: `test-results/visual-audit/${name}.png`,
+      fullPage: true,
+    })
+    expect(
+      result.violations.map((v) => ({
+        id: v.id,
+        nodes: v.nodes.map((n) => ({
+          target: n.target,
+          summary: n.failureSummary,
+        })),
+      }))
+    ).toEqual([])
+  }
+  for (const route of [
+    "login",
+    "register",
+    "forgot-password",
+    "reset-password",
+  ]) {
+    await page.goto(`/${route}`)
+    await expect(page.locator("main h1")).toBeVisible()
+    await check(route)
+  }
+  await register(page)
+  await page.goto("/assessments/javascript/take?level=easy")
+  await expect(
+    page.getByRole("button", { name: "Start assessment", exact: true })
+  ).toBeVisible()
+  await check("preflight")
+  const id = await start(page)
+  await check("quiz-desktop")
+  await page.setViewportSize({ width: 390, height: 844 })
+  await check("quiz-mobile")
+  const response = await page.request.post(
+    `${api}/api/v1/attempts/${id}/submit`,
+    { headers: { Origin: origin }, data: {} }
+  )
+  expect(response.ok()).toBeTruthy()
+  await page.goto(`/results/${id}`)
+  await expect(
+    page.getByRole("heading", { name: "Answer review" })
+  ).toBeVisible()
+  await check("result-mobile")
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await check("result-desktop")
+})
+
+test("every supported palette persists and compact layouts remain accessible", async ({
+  page,
+}) => {
+  test.setTimeout(240_000)
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await register(page)
+  const failures: unknown[] = []
+  for (const palette of [
+    "taupe",
+    "neutral",
+    "stone",
+    "zinc",
+    "blue",
+    "green",
+    "rose",
+  ]) {
+    for (const mode of ["light", "dark"]) {
+      expect(
+        (
+          await page.request.patch(`${api}/api/v1/me/preferences`, {
+            headers: { Origin: origin },
+            data: {
+              palette,
+              mode,
+              density: "compact",
+              radius: "sharp",
+              reducedMotion: true,
+            },
+          })
+        ).ok()
+      ).toBeTruthy()
+      for (const route of ["settings", "assessments/javascript"]) {
+        await page.goto(`/${route}`)
+        await expect(page.locator("main h1")).toBeVisible()
+        await expect(page.locator("html")).toHaveAttribute(
+          "data-palette",
+          palette
+        )
+        await expect(page.locator("html")).toHaveClass(new RegExp(mode))
+        await expect(page.locator("html")).toHaveAttribute(
+          "data-density",
+          "compact"
+        )
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth
+          )
+        ).toBeTruthy()
+        const results = await new AxeBuilder({ page })
+          .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+          .analyze()
+        for (const v of results.violations)
+          failures.push({
+            palette,
+            mode,
+            route,
+            id: v.id,
+            nodes: v.nodes.map((n) => ({
+              target: n.target,
+              summary: n.failureSummary,
+            })),
+          })
+        await page.screenshot({
+          path: `test-results/palette-audit/${palette}-${mode}-${route.replaceAll("/", "-")}.png`,
+          fullPage: true,
+        })
+      }
+    }
+  }
+  await writeFile(
+    "test-results/palette-audit/findings.json",
+    JSON.stringify(failures, null, 2)
+  )
+  expect(failures).toEqual([])
+})
+
+test("admin screens fit mobile and expose accessible content, settings and audit", async ({
+  page,
+}) => {
+  test.skip(
+    !process.env.SEED_PASSWORD,
+    "Set the local seed password to exercise admin screens."
+  )
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/login")
+  await page.getByLabel("Email address").fill("admin@lunaris.local")
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill(process.env.SEED_PASSWORD!)
+  await page.getByRole("button", { name: "Sign in", exact: true }).click()
+  await expect(page).toHaveURL(/\/assessments$/)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto("/admin/questions")
+  await expect(
+    page.getByRole("heading", { name: "Question bank", exact: true })
+  ).toBeVisible()
+  for (const tab of ["Questions", "Assessment settings", "Audit trail"]) {
+    await page.getByRole("tab", { name: tab, exact: true }).click()
+    await expect(
+      page.getByRole("tabpanel", { name: tab, exact: true })
+    ).toBeVisible()
+    if (tab === "Assessment settings")
+      await expect(
+        page.getByRole("button", {
+          name: "Save assessment settings",
+          exact: true,
+        })
+      ).toBeVisible()
+    if (tab === "Audit trail")
+      await expect(page.getByRole("table")).toBeVisible()
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth
+      )
+    ).toBeTruthy()
+    const result = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+      .analyze()
+    expect(
+      result.violations.map((v) => ({
+        id: v.id,
+        nodes: v.nodes.map((n) => ({
+          target: n.target,
+          summary: n.failureSummary,
+        })),
+      }))
+    ).toEqual([])
+    await page.screenshot({
+      path: `test-results/admin-audit/${tab.replaceAll(" ", "-")}.png`,
+      fullPage: true,
+    })
+  }
 })

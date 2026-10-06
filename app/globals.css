@@ -16,7 +16,7 @@
   --secondary: oklch(0.96 0.002 17.2);
   --secondary-foreground: oklch(0.214 0.009 43.1);
   --muted: oklch(0.96 0.002 17.2);
-  --muted-foreground: oklch(0.547 0.021 43.1);
+  --muted-foreground: oklch(0.52 0.021 43.1);
   --accent: oklch(0.96 0.002 17.2);
   --accent-foreground: oklch(0.214 0.009 43.1);
   --destructive: oklch(0.577 0.245 27.325);
@@ -1525,25 +1525,6 @@ tr:last-child td {
   scroll-behavior: auto !important;
 }
 
-/* Native mobile dialog keeps focus in the drawer and supports Escape. */
-dialog.mobile-overlay {
-  display: none;
-  border: 0;
-  padding: 0;
-  margin: 0;
-  width: 100vw;
-  height: 100dvh;
-  max-width: none;
-  max-height: none;
-  background: transparent;
-  color: var(--foreground);
-}
-dialog.mobile-overlay[open] {
-  display: flex;
-}
-dialog.mobile-overlay::backdrop {
-  background: transparent;
-}
 .two-column {
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
 }

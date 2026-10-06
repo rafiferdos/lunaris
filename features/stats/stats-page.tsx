@@ -129,6 +129,12 @@ export function StatsPage() {
           {performance.data && (
             <Panel className="section-space">
               <h3>Performance by category and mode</h3>
+              {!performance.data.groups.length && (
+                <EmptyState
+                  title="No category results yet"
+                  description="Complete an assessment to compare your performance across categories and modes."
+                />
+              )}
               {performance.data.groups.map((g) => (
                 <div className="recent-row" key={`${g.category}:${g.mode}`}>
                   <div>

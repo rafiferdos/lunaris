@@ -91,7 +91,11 @@ function WorkspaceShell({ children }: { children: React.ReactNode }) {
     [...navigation, ...accountNavigation].find((n) =>
       pathname.startsWith(n.href)
     )?.label ??
-    (pathname.startsWith("/results") ? "Assessment results" : "Question import")
+    (pathname.startsWith("/results")
+      ? "Assessment results"
+      : pathname.endsWith("/import")
+        ? "Question import"
+        : "Question bank")
   function menu(items: typeof navigation) {
     return (
       <SidebarMenu>

@@ -38,7 +38,12 @@ export function ConfirmDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>
+          <AlertDialogAction
+            onClick={() => {
+              onClose()
+              onConfirm()
+            }}
+          >
             {confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
