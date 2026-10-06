@@ -5,7 +5,7 @@ import { Toggle } from "@/components/ui/toggle"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useId, useState } from "react"
 import { useTheme } from "next-themes"
-import Link from "next/link"
+import Link from "@/components/shared/app-link"
 import { useSignOut } from "@/features/auth/auth-boundary"
 import { MutationError } from "@/components/shared/query-state"
 import { defaults } from "./schema"
@@ -182,6 +182,7 @@ export function SettingsPage() {
                 ].map((topic) => (
                   <Toggle
                     key={topic}
+                    disabled={mutation.isPending}
                     variant="outline"
                     className="capitalize"
                     pressed={preferences.topics.includes(topic)}
@@ -223,13 +224,15 @@ export function SettingsPage() {
             <h2>Notifications</h2>
             <SettingToggle
               label="Progress summaries"
-              description="Save your email preference. Delivery is not enabled yet."
+              description="Unavailable until scheduled email summaries are enabled."
+              disabled
               checked={preferences.email}
               onChange={(value) => update({ email: value })}
             />
             <SettingToggle
               label="Practice reminders"
-              description="Save a reminder preference for the future service."
+              description="Unavailable until scheduled reminders are enabled."
+              disabled
               checked={preferences.reminders}
               onChange={(value) => update({ reminders: value })}
             />
@@ -276,11 +279,13 @@ function SettingToggle({
   description,
   checked,
   onChange,
+  disabled = false,
 }: {
   label: string
   description: string
   checked: boolean
   onChange: (value: boolean) => void
+  disabled?: boolean
 }) {
   const id = useId()
   return (
@@ -292,6 +297,7 @@ function SettingToggle({
         </p>
       </div>
       <Switch
+        disabled={disabled}
         id={id}
         aria-describedby={`${id}-description`}
         checked={checked}

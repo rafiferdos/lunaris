@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { queryOptions } from "@tanstack/react-query"
-import { API_URL, apiFetch, ApiError } from "@/lib/api/client"
+import { API_URL, apiFetch, ApiError, SESSION_CHANGED } from "@/lib/api/client"
 const sessionSchema = z
   .object({
     user: z.object({
@@ -31,14 +31,26 @@ export const sessionOptions = queryOptions({
   retry: false,
 })
 export async function authenticate(
-  action: "sign-in/email" | "sign-up/email" | "sign-out",
+  action:
+    | "sign-in/email"
+    | "sign-up/email"
+    | "sign-out"
+    | "request-password-reset"
+    | "reset-password",
   body:
-    { email: string; password: string; name?: string } | Record<string, never>
+    | { email: string; password: string; name?: string }
+    | { email: string; redirectTo: string }
+    | { token: string; newPassword: string }
+    | Record<string, never>,
+  expectedUserId?: string
 ) {
   const response = await apiFetch(
     new Request(`${API_URL}/api/auth/${action}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(expectedUserId ? { "X-Lunaris-User": expectedUserId } : {}),
+      },
       body: JSON.stringify(body),
     })
   )
@@ -46,6 +58,12 @@ export async function authenticate(
     const parsed = z
       .object({ message: z.string().optional(), code: z.string().optional() })
       .safeParse(await response.json())
+    if (
+      parsed.success &&
+      parsed.data.code === "SESSION_CHANGED" &&
+      typeof window !== "undefined"
+    )
+      window.dispatchEvent(new Event(SESSION_CHANGED))
     throw new ApiError(
       parsed.success
         ? (parsed.data.message ?? "Authentication failed.")
@@ -55,12 +73,36 @@ export async function authenticate(
     )
   }
 }
+export const capabilitiesOptions = queryOptions({
+  queryKey: ["capabilities"],
+  queryFn: async ({ signal }) => {
+    const response = await apiFetch(
+      new Request(`${API_URL}/api/capabilities`, { signal })
+    )
+    if (!response.ok)
+      throw new ApiError(
+        "Could not check account recovery availability.",
+        response.status,
+        "CAPABILITIES_FAILED"
+      )
+    return z.object({ passwordReset: z.boolean() }).parse(await response.json())
+  },
+  staleTime: 60_000,
+})
 export function safeReturnTo(value: string | null) {
-  return value?.startsWith("/") &&
-    !value.startsWith("//") &&
-    !value.includes("\\") &&
-    !value.startsWith("/login") &&
-    !value.startsWith("/register")
-    ? value
-    : "/assessments"
+  if (!value?.startsWith("/") || /[\x00-\x20\\]/.test(value))
+    return "/assessments"
+  try {
+    const url = new URL(value, "https://lunaris.invalid")
+    if (
+      url.origin !== "https://lunaris.invalid" ||
+      /^\/(login|register|reset-password|forgot-password)(\/|$)/.test(
+        url.pathname
+      )
+    )
+      return "/assessments"
+    return url.pathname + url.search + url.hash
+  } catch {
+    return "/assessments"
+  }
 }

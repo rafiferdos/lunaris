@@ -2,10 +2,16 @@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { authenticate, sessionOptions, safeReturnTo } from "./session"
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
+import {
+  authenticate,
+  sessionOptions,
+  safeReturnTo,
+  capabilitiesOptions,
+} from "./session"
+import { announceSession } from "./session-events"
 import { MutationError } from "@/components/shared/query-state"
-import Link from "next/link"
+import Link from "@/components/shared/app-link"
 import { useRouter } from "next/navigation"
 import { z } from "zod"
 import { Orbit, ArrowRight } from "lucide-react"
@@ -22,13 +28,29 @@ export function AuthForm({
 }) {
   const router = useRouter()
   const client = useQueryClient()
+  const capabilities = useQuery({
+    ...capabilitiesOptions,
+    enabled: mode === "forgot-password",
+  })
   const mutation = useMutation({
     mutationFn: (body: { email: string; password: string; name?: string }) =>
-      authenticate(
-        mode === "register" ? "sign-up/email" : "sign-in/email",
-        body
-      ),
+      mode === "forgot-password"
+        ? authenticate("request-password-reset", {
+            email: body.email,
+            redirectTo: `${window.location.origin}/reset-password`,
+          })
+        : authenticate(
+            mode === "register" ? "sign-up/email" : "sign-in/email",
+            body
+          ),
     onSuccess: async () => {
+      if (mode === "forgot-password") {
+        setMessage(
+          "If an account exists for that email, you will receive a password reset link shortly."
+        )
+        return
+      }
+      announceSession("changed")
       await client.cancelQueries()
       client.clear()
       await client.fetchQuery(sessionOptions)
@@ -64,9 +86,12 @@ export function AuthForm({
     }
     setErrors({})
     if (forgot) {
-      setMessage(
-        "Password recovery is not available yet. Contact your workspace administrator for help."
-      )
+      if (capabilities.data?.passwordReset)
+        mutation.mutate({ email: parsed.data.email, password: "" })
+      else
+        setMessage(
+          "Password recovery is not configured. Contact your workspace administrator for help."
+        )
       return
     }
     if (!forgot)
@@ -141,7 +166,9 @@ export function AuthForm({
           </h1>
           <p className="muted mt-3 text-sm">
             {forgot
-              ? "Contact your administrator if you cannot access your account."
+              ? capabilities.data?.passwordReset
+                ? "Enter your email to receive a one-time reset link."
+                : "Contact your administrator if you cannot access your account."
               : register
                 ? "Create your workspace and start with what matters."
                 : "Sign in to your personal workspace."}
@@ -161,6 +188,7 @@ export function AuthForm({
                 label="Password"
                 name="password"
                 type="password"
+                autoComplete={register ? "new-password" : "current-password"}
                 error={errors.password}
               />
             )}{" "}
@@ -170,9 +198,18 @@ export function AuthForm({
               </Link>
             )}
             <MutationError error={mutation.error} />
-            <Button type="submit" size="lg" disabled={mutation.isPending}>
+            <MutationError error={capabilities.error} />
+            <Button
+              type="submit"
+              size="lg"
+              disabled={
+                mutation.isPending || (forgot && capabilities.isPending)
+              }
+            >
               {forgot
-                ? "Recovery information"
+                ? capabilities.data?.passwordReset
+                  ? "Send reset link"
+                  : "Recovery information"
                 : register
                   ? "Create account"
                   : "Sign in"}
@@ -213,11 +250,13 @@ function AuthField({
   name,
   type = "text",
   error,
+  autoComplete,
 }: {
   label: string
   name: string
   type?: string
   error?: string
+  autoComplete?: string
 }) {
   return (
     <Label className="field">
@@ -225,7 +264,7 @@ function AuthField({
       <Input
         name={name}
         type={type}
-        autoComplete={name === "password" ? "current-password" : name}
+        autoComplete={autoComplete ?? name}
         placeholder={name === "email" ? "you@example.com" : undefined}
         aria-invalid={!!error}
         aria-describedby={error ? `auth-${name}` : undefined}

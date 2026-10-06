@@ -237,7 +237,7 @@ export interface paths {
         content: {
           "application/json": {
             displayName?: string
-            username?: string
+            username?: string | null
             avatarUrl?: string | null
             bio?: string
             country?: string | null

@@ -5,7 +5,7 @@ export default function ErrorPage({ retry }: { retry: () => void }) {
   return (
     <EmptyState
       title="This part of your workspace couldn’t load"
-      description="Your saved attempts are still on this device. Try loading this page again."
+      description="Your saved attempts remain on your account. Try loading this page again."
     >
       <Button onClick={retry}>Try again</Button>
     </EmptyState>

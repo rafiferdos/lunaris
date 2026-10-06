@@ -15,6 +15,9 @@ test("return navigation rejects external and protocol-relative destinations", ()
     "//evil.example",
     "/\\evil.example",
     "/login",
+    "/\n/evil.example",
+    "/\t/evil.example",
+    "/reset-password?token=secret",
   ])
     assert.equal(safeReturnTo(url), "/assessments")
   assert.equal(safeReturnTo("/history?topic=react"), "/history?topic=react")

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { usePathname, useRouter } from "next/navigation"
 import { sessionOptions, authenticate, type Session } from "./session"
 import { QueryState } from "@/components/shared/query-state"
+import { announceSession } from "./session-events"
 const SessionContext = createContext<Session | null>(null)
 export function useSession() {
   const session = useContext(SessionContext)
@@ -28,22 +29,23 @@ export function AuthBoundary({ children }: { children: React.ReactNode }) {
         label="Checking your session"
       />
     )
-  return <SessionContext value={query.data}>{children}</SessionContext>
+  return (
+    <SessionContext key={query.data.user.id} value={query.data}>
+      {children}
+    </SessionContext>
+  )
 }
 export function useSignOut() {
+  const { user } = useSession()
   const client = useQueryClient(),
     router = useRouter()
   return useMutation({
-    mutationFn: () => authenticate("sign-out", {}),
+    mutationFn: () => authenticate("sign-out", {}, user.id),
     onSuccess: async () => {
       await client.cancelQueries()
       client.clear()
       client.setQueryData(["session"], null)
-      if (typeof BroadcastChannel !== "undefined") {
-        const channel = new BroadcastChannel("lunaris-session")
-        channel.postMessage("signed-out")
-        channel.close()
-      }
+      announceSession("signed-out")
       router.replace("/login")
     },
   })

@@ -1,5 +1,5 @@
 "use client"
-import Link from "next/link"
+import Link from "@/components/shared/app-link"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowLeft, ArrowRight, Clock3, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -13,18 +13,19 @@ import {
 } from "@/components/shared/ui"
 import { QueryState } from "@/components/shared/query-state"
 import { PageEntrance } from "@/components/shared/motion"
-import { useWorkspace } from "@/features/workspace/workspace-provider"
 import { useSession } from "@/features/auth/auth-boundary"
 import { queries } from "@/lib/api/queries"
 import { modeLabels } from "../services/assessment-service"
 import { usePreferences } from "@/features/settings/preferences"
 import { percent, dateTime } from "@/lib/format"
 export function TopicDetail({ slug }: { slug: string }) {
-  const { assessments } = useWorkspace(),
-    { user } = useSession(),
+  const { user } = useSession(),
     preferences = usePreferences()
   const history = useQuery(queries.history(user.id, { topic: slug, limit: 5 }))
-  const topic = assessments.find((a) => a.slug === slug)
+  const catalog = useQuery(queries.assessments(user.id))
+  if (!catalog.data)
+    return <QueryState error={catalog.error} retry={catalog.refetch} />
+  const topic = catalog.data.find((a) => a.slug === slug)
   if (!topic)
     return (
       <EmptyState

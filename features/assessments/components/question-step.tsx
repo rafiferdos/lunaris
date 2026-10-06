@@ -9,6 +9,11 @@ import { CodeBlock } from "@/components/shared/code-block"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { MutationError } from "@/components/shared/query-state"
 import type { ServerQuestion, ServerAttempt } from "@/lib/api/types"
+import { useSession } from "@/features/auth/auth-boundary"
+import {
+  useNavigationSave,
+  useNavigationPending,
+} from "@/components/shared/navigation-guard"
 export function QuestionStep({
   question,
   index,
@@ -30,8 +35,33 @@ export function QuestionStep({
   navigate: (index: number) => void
   submit: () => Promise<unknown>
 }) {
-  const [selected, setSelected] = useState(question.selected),
-    [status, setStatus] = useState("Saved"),
+  const { user } = useSession()
+  const navigating = useNavigationPending()
+  const draftKey = `lunaris:draft:${user.id}:${question.id}`
+  const [selected, setSelected] = useState<string[]>(() => {
+      if (!editable && question.answered) return question.selected
+      try {
+        const value: unknown = JSON.parse(
+          sessionStorage.getItem(draftKey) ?? "null"
+        )
+        if (
+          Array.isArray(value) &&
+          value.every(
+            (id) =>
+              typeof id === "string" &&
+              question.options.some((o) => o.id === id)
+          ) &&
+          (question.type === "MULTIPLE_CHOICE" || value.length <= 1)
+        )
+          return [...new Set(value)]
+      } catch {}
+      return question.selected
+    }),
+    [status, setStatus] = useState(
+      JSON.stringify(selected) === JSON.stringify(question.selected)
+        ? "Saved"
+        : "Restored unsaved answer"
+    ),
     [busy, setBusy] = useState(false),
     [error, setError] = useState<unknown>(null),
     [confirm, setConfirm] = useState<"submit" | "skip" | null>(null)
@@ -44,14 +74,6 @@ export function QuestionStep({
   useEffect(() => {
     started.current = Date.now()
   }, [])
-  useEffect(() => {
-    const warn = (event: BeforeUnloadEvent) => {
-      if (pending.current || JSON.stringify(selected) !== saved.current)
-        event.preventDefault()
-    }
-    window.addEventListener("beforeunload", warn)
-    return () => window.removeEventListener("beforeunload", warn)
-  }, [selected])
   const locked = !editable && question.answered
   const persist = useCallback(
     async (value: string[]) => {
@@ -69,6 +91,10 @@ export function QuestionStep({
       try {
         const result = await request
         saved.current = JSON.stringify(value)
+        try {
+          if (sessionStorage.getItem(draftKey) === saved.current)
+            sessionStorage.removeItem(draftKey)
+        } catch {}
         committed.current = true
         setStatus("Saved")
         setError(null)
@@ -77,7 +103,7 @@ export function QuestionStep({
         if (pending.current === request) pending.current = null
       }
     },
-    [save]
+    [save, draftKey]
   )
   useEffect(() => {
     if (!editable || disabled || JSON.stringify(selected) === saved.current)
@@ -90,6 +116,23 @@ export function QuestionStep({
     }, 500)
     return () => clearTimeout(timer.current)
   }, [selected, editable, disabled, persist])
+  useNavigationSave(async () => {
+    clearTimeout(timer.current)
+    if (
+      !editable ||
+      pending.current ||
+      JSON.stringify(selected) !== saved.current
+    )
+      await persist(selected)
+    if (!editable) await submit()
+  }, !editable)
+  function select(value: string[]) {
+    try {
+      sessionStorage.setItem(draftKey, JSON.stringify(value))
+    } catch {}
+    setStatus("Unsaved changes")
+    setSelected(value)
+  }
   async function act(destination: number | "submit") {
     if (acting.current) return
     acting.current = true
@@ -116,7 +159,7 @@ export function QuestionStep({
     else if (!editable && !selected.length && !locked) setConfirm("skip")
     else void act(index + 1)
   }
-  const isDisabled = disabled || busy || locked
+  const isDisabled = disabled || busy || navigating || locked
   return (
     <>
       <Panel>
@@ -137,8 +180,7 @@ export function QuestionStep({
                   checked={selected.includes(option.id)}
                   disabled={isDisabled}
                   onCheckedChange={(checked) => {
-                    setStatus("Unsaved changes")
-                    setSelected(
+                    select(
                       checked
                         ? [...selected, option.id]
                         : selected.filter((id) => id !== option.id)
@@ -158,8 +200,7 @@ export function QuestionStep({
             value={selected[0] ?? ""}
             disabled={isDisabled}
             onValueChange={(value) => {
-              setStatus("Unsaved changes")
-              setSelected([String(value)])
+              select([String(value)])
             }}
           >
             {question.options.map((option, i) => (
@@ -180,8 +221,7 @@ export function QuestionStep({
             size="sm"
             disabled={disabled || busy}
             onClick={() => {
-              setStatus("Unsaved changes")
-              setSelected([])
+              select([])
             }}
           >
             Clear selection

@@ -21,14 +21,15 @@ import {
 } from "@/components/shared/ui"
 import { QueryState } from "@/components/shared/query-state"
 import { CursorPagination } from "@/components/shared/cursor-pagination"
-import { useWorkspace } from "@/features/workspace/workspace-provider"
 import { useSession } from "@/features/auth/auth-boundary"
 import { queries } from "@/lib/api/queries"
 import type { RankingFilters, RankedUser } from "@/lib/api/types"
 import { percent } from "@/lib/format"
 import { useLiveLeaderboard } from "./use-live-leaderboard"
 export function LeaderboardPage() {
-  const { assessments } = useWorkspace()
+  const { user } = useSession()
+  const catalog = useQuery(queries.assessments(user.id)),
+    assessments = catalog.data ?? []
   const [period, setPeriod] = useState<RankingFilters["period"]>("weekly"),
     [category, setCategory] = useState<RankingFilters["category"]>("overall"),
     [mode, setMode] = useState<RankingFilters["mode"]>("all"),
@@ -47,6 +48,9 @@ export function LeaderboardPage() {
         title="The leaderboard"
         description="Earn XP through eligible assessments. Rankings update as results arrive."
       />
+      {catalog.error && (
+        <QueryState error={catalog.error} retry={catalog.refetch} />
+      )}
       <div className="mb-6 flex flex-wrap justify-between gap-4">
         <ToggleGroup
           aria-label="Ranking period"

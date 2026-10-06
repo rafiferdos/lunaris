@@ -1,10 +1,10 @@
 "use client"
 import { useCallback } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { api, unwrap, ApiError } from "@/lib/api/client"
+import { apiFor, unwrap, ApiError } from "@/lib/api/client"
 import { queries, invalidateProgress } from "@/lib/api/queries"
 import { useSession } from "@/features/auth/auth-boundary"
-import type { IntegrityEvent } from "@/lib/api/types"
+import type { IntegrityEvent, ServerAttempt } from "@/lib/api/types"
 type Action =
   | {
       type: "answer"
@@ -18,15 +18,54 @@ export function useAttemptActions(id: string) {
   const { user } = useSession(),
     client = useQueryClient(),
     options = queries.attempt(user.id, id)
+  const reconcile = (data: ServerAttempt) => {
+    client.setQueryData(options.queryKey, (current) => {
+      if (
+        current?.status !== "IN_PROGRESS" &&
+        current?.result &&
+        data.status === "IN_PROGRESS"
+      )
+        return current
+      if (
+        current &&
+        Date.parse(current.serverTime) > Date.parse(data.serverTime)
+      )
+        return current
+      return data
+    })
+    if (data.status !== "IN_PROGRESS") void invalidateProgress(client, user.id)
+  }
+  const onError = (error: Error) => {
+    if (error instanceof ApiError && error.status === 409)
+      void client.invalidateQueries({ queryKey: options.queryKey })
+  }
+  const events = useMutation({
+    networkMode: "always",
+    mutationFn: async (event: IntegrityEvent) => {
+      await client.cancelQueries({ queryKey: options.queryKey })
+      return (
+        await unwrap(
+          apiFor(user.id).POST("/api/v1/attempts/{id}/integrity-events", {
+            params: { path: { id } },
+            body: event,
+            keepalive: true,
+          })
+        )
+      ).data
+    },
+    onSuccess: reconcile,
+    onError,
+  })
   const mutation = useMutation({
+    networkMode: "always",
     scope: { id: `attempt:${id}` },
-    mutationFn: async (action: Action) => {
+    mutationFn: async (action: Exclude<Action, { type: "event" }>) => {
       await client.cancelQueries({ queryKey: options.queryKey })
       const params = { path: { id } }
       if (action.type === "answer")
         return (
           await unwrap(
-            api.PUT("/api/v1/attempts/{id}/answers/{questionId}", {
+            apiFor(user.id).PUT("/api/v1/attempts/{id}/answers/{questionId}", {
               params: { path: { id, questionId: action.questionId } },
               body: {
                 selected: action.selected,
@@ -35,36 +74,24 @@ export function useAttemptActions(id: string) {
             })
           )
         ).data
-      if (action.type === "event")
-        return (
-          await unwrap(
-            api.POST("/api/v1/attempts/{id}/integrity-events", {
-              params,
-              body: action.event,
-              keepalive: true,
-            })
-          )
-        ).data
       return (
         await unwrap(
-          api.POST("/api/v1/attempts/{id}/submit", { params, body: {} })
+          apiFor(user.id).POST("/api/v1/attempts/{id}/submit", {
+            params,
+            body: {},
+          })
         )
       ).data
     },
-    onSuccess: (data) => {
-      client.setQueryData(options.queryKey, data)
-      if (data.status !== "IN_PROGRESS")
-        void invalidateProgress(client, user.id)
-    },
-    onError: (error) => {
-      if (error instanceof ApiError && error.status === 409)
-        void client.invalidateQueries({ queryKey: options.queryKey })
-    },
+    onSuccess: reconcile,
+    onError,
   })
   const { mutateAsync } = mutation
+  const sendSignal = events.mutateAsync
   const send = useCallback(
-    (action: Action) => mutateAsync(action),
-    [mutateAsync]
+    (action: Action) =>
+      action.type === "event" ? sendSignal(action.event) : mutateAsync(action),
+    [mutateAsync, sendSignal]
   )
   return { ...mutation, send }
 }

@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "@/components/shared/app-link"
 import { ArrowUpRight, Clock3, Check, LockKeyhole } from "lucide-react"
 import type { Topic } from "../types/assessment"
 import { Badge, Progress } from "@/components/shared/ui"

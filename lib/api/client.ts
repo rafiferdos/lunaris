@@ -14,6 +14,7 @@ if (
   throw new Error("NEXT_PUBLIC_API_URL must be an HTTP(S) origin.")
 export const API_URL = origin.origin
 export const SESSION_EXPIRED = "lunaris:session-expired"
+export const SESSION_CHANGED = "lunaris:session-changed"
 
 export class ApiError extends Error {
   constructor(
@@ -46,17 +47,26 @@ export async function apiFetch(request: Request) {
     window.dispatchEvent(new Event(SESSION_EXPIRED))
   return response
 }
-export const api = createClient<paths>({
-  baseUrl: API_URL,
-  credentials: "include",
-  fetch: apiFetch,
-})
+export function apiFor(userId: string) {
+  return createClient<paths>({
+    baseUrl: API_URL,
+    credentials: "include",
+    headers: { "X-Lunaris-User": userId },
+    fetch: apiFetch,
+  })
+}
 export async function unwrap<T>(
   request: Promise<{ data?: T; error?: unknown; response: Response }>
 ): Promise<T> {
   const { data, error, response } = await request
   if (!response.ok) {
     const detail = error && typeof error === "object" ? error : {}
+    if (
+      "code" in detail &&
+      detail.code === "SESSION_CHANGED" &&
+      typeof window !== "undefined"
+    )
+      window.dispatchEvent(new Event(SESSION_CHANGED))
     throw new ApiError(
       "detail" in detail && typeof detail.detail === "string"
         ? detail.detail

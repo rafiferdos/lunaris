@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect, useCallback } from "react"
-import Link from "next/link"
+import Link from "@/components/shared/app-link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { z } from "zod"
@@ -16,10 +16,9 @@ import {
   EmptyState,
 } from "@/components/shared/ui"
 import { QueryState, MutationError } from "@/components/shared/query-state"
-import { useWorkspace } from "@/features/workspace/workspace-provider"
 import { useSession } from "@/features/auth/auth-boundary"
 import { queries, invalidateProgress } from "@/lib/api/queries"
-import { api, unwrap, errorMessage } from "@/lib/api/client"
+import { apiFor, unwrap, errorMessage } from "@/lib/api/client"
 import type { ServerAttempt, Mode, IntegrityEvent } from "@/lib/api/types"
 import { useAttemptLease } from "../hooks/use-attempt-lease"
 import { useAttemptActions } from "../hooks/use-attempt-actions"
@@ -29,6 +28,7 @@ import { useIntegrity } from "@/features/integrity/use-integrity"
 import { useSpeechMonitor } from "@/features/integrity/use-speech-monitor"
 import { QuestionStep } from "./question-step"
 import { modeLabels } from "../services/assessment-service"
+import { usePreferences } from "@/features/settings/preferences"
 export function Quiz({ slug }: { slug: string }) {
   const search = useSearchParams(),
     id = search.get("attempt"),
@@ -54,13 +54,13 @@ export function Quiz({ slug }: { slug: string }) {
   return <StartAssessment slug={slug} mode={mode} />
 }
 function StartAssessment({ slug, mode }: { slug: string; mode: Mode }) {
-  const { assessments } = useWorkspace(),
-    { user } = useSession(),
+  const { user } = useSession(),
     router = useRouter(),
     client = useQueryClient()
   const [consent, setConsent] = useState(false),
     [error, setError] = useState("")
-  const topic = assessments.find((t) => t.slug === slug),
+  const catalog = useQuery(queries.assessments(user.id))
+  const topic = catalog.data?.find((t) => t.slug === slug),
     policy = topic?.modes.find((m) => m.mode === mode)
   const active = useQuery(
     queries.history(user.id, { status: "IN_PROGRESS", limit: 1 })
@@ -71,7 +71,7 @@ function StartAssessment({ slug, mode }: { slug: string; mode: Mode }) {
         requestKey = getStartRequestKey(key, sessionStorage)
       return (
         await unwrap(
-          api.POST("/api/v1/attempts", {
+          apiFor(user.id).POST("/api/v1/attempts", {
             body: { topicSlug: slug, mode, requestKey },
           })
         )
@@ -101,6 +101,8 @@ function StartAssessment({ slug, mode }: { slug: string; mode: Mode }) {
     }
     start.mutate()
   }
+  if (!catalog.data)
+    return <QueryState error={catalog.error} retry={catalog.refetch} />
   if (!topic || !policy)
     return (
       <EmptyState
@@ -268,6 +270,7 @@ function ActiveAttempt({
   attempt: ServerAttempt
   receivedAt: number
 }) {
+  const preferences = usePreferences()
   const [index, setIndex] = useState(() =>
     Math.min(
       attempt.currentPosition +
@@ -327,10 +330,12 @@ function ActiveAttempt({
           <p className="eyebrow">{modeLabels[attempt.mode]}</p>
           <h1>{attempt.topic.name}</h1>
         </div>
-        <Badge>
-          {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, "0")}{" "}
-          remaining
-        </Badge>
+        {(preferences.timer || attempt.mode === "COMPETITIVE") && (
+          <Badge>
+            {Math.floor(remaining / 60)}:
+            {String(remaining % 60).padStart(2, "0")} remaining
+          </Badge>
+        )}
       </div>
       <Progress
         value={((index + 1) / attempt.questionCount) * 100}

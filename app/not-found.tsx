@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import Link from "@/components/shared/app-link"
 import { EmptyState } from "@/components/shared/ui"
 export default function NotFound() {
   return (

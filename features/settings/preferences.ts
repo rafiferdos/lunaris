@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useWorkspace } from "@/features/workspace/workspace-provider"
 import { useSession } from "@/features/auth/auth-boundary"
-import { api, unwrap } from "@/lib/api/client"
+import { apiFor, unwrap } from "@/lib/api/client"
 import { queries, privateKey } from "@/lib/api/queries"
 import { preferenceSchema, type Preferences } from "./schema"
 export { preferenceSchema, defaults, type Preferences } from "./schema"
@@ -24,11 +24,13 @@ export function useUpdatePreferences() {
       const { topics, difficulty, ...rest } = patch
       if (topics)
         await unwrap(
-          api.PATCH("/api/v1/me", { body: { preferredTopics: topics } })
+          apiFor(user.id).PATCH("/api/v1/me", {
+            body: { preferredTopics: topics },
+          })
         )
       return (
         await unwrap(
-          api.PATCH("/api/v1/me/preferences", {
+          apiFor(user.id).PATCH("/api/v1/me/preferences", {
             body: {
               ...rest,
               ...(difficulty
@@ -49,10 +51,12 @@ export function useUpdatePreferences() {
     },
     onSuccess: async (data) => {
       client.setQueryData(queries.preferences(user.id).queryKey, data)
+    },
+    onSettled: async () => {
       await client.invalidateQueries({
         queryKey: privateKey(user.id),
         predicate: (query) =>
-          ["profile", "overview", "rankings"].includes(
+          ["profile", "preferences", "overview", "rankings"].includes(
             String(query.queryKey[2])
           ),
       })

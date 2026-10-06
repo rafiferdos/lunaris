@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card"
 import { Badge as ShadcnBadge } from "@/components/ui/badge"
 import { Avatar as ShadcnAvatar, AvatarFallback } from "@/components/ui/avatar"
 import { Progress as ShadcnProgress } from "@/components/ui/progress"
-import Link from "next/link"
+import Link from "@/components/shared/app-link"
 import { ArrowUpRight, SearchX } from "lucide-react"
 import { cn } from "@/lib/utils"
 export function PageHeader({
@@ -108,7 +108,7 @@ export function EmptyState({
   )
 }
 export function Avatar({
-  name = "Rafi Ferdos",
+  name = "Member",
   small = false,
 }: {
   name?: string

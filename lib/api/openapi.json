@@ -568,6 +568,7 @@
                   },
                   "username": {
                     "type": "string",
+                    "nullable": true,
                     "pattern": "^[a-z][a-z0-9_]{2,23}$"
                   },
                   "avatarUrl": {

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { activitySummary } from "@/features/stats/activity"
 import { usePreferences } from "@/features/settings/preferences"
 import { useState } from "react"
-import Link from "next/link"
+import Link from "@/components/shared/app-link"
 import {
   Search,
   SlidersHorizontal,
@@ -38,11 +38,48 @@ import {
   useAvailability,
 } from "@/features/history/use-attempts"
 import { useProfile } from "@/features/profile/use-profile"
-import { useWorkspace } from "@/features/workspace/workspace-provider"
+import { useQueries } from "@tanstack/react-query"
+import { useSession } from "@/features/auth/auth-boundary"
+import { queries } from "@/lib/api/queries"
+import { QueryState } from "@/components/shared/query-state"
+import type { Assessment, Overview, GetResponse } from "@/lib/api/types"
 import { topicView } from "../services/assessment-service"
 import { AssessmentCard } from "./assessment-card"
 export function Discovery() {
-  const { assessments, overview, activity: activityData } = useWorkspace()
+  const { user } = useSession()
+  const [catalog, overview, activity] = useQueries({
+    queries: [
+      queries.assessments(user.id),
+      queries.overview(user.id),
+      queries.activity(user.id),
+    ],
+  })
+  if (!catalog.data || !overview.data || !activity.data)
+    return (
+      <QueryState
+        error={[catalog, overview, activity].find((q) => q.error)?.error}
+        retry={() =>
+          Promise.all([catalog, overview, activity].map((q) => q.refetch()))
+        }
+      />
+    )
+  return (
+    <DiscoveryContent
+      assessments={catalog.data}
+      overview={overview.data}
+      activityData={activity.data}
+    />
+  )
+}
+function DiscoveryContent({
+  assessments,
+  overview,
+  activityData,
+}: {
+  assessments: Assessment[]
+  overview: Overview
+  activityData: GetResponse<"/api/v1/stats/activity">["data"]
+}) {
   const topics = assessments.map(topicView)
   const filters = useUrlFilters()
   const [expanded, setExpanded] = useState(false)

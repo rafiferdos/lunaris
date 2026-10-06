@@ -4,6 +4,8 @@ import {
   type Page,
   type APIRequestContext,
 } from "@playwright/test"
+import AxeBuilder from "@axe-core/playwright"
+import { writeFile } from "node:fs/promises"
 import { randomUUID } from "node:crypto"
 import { setTimeout as delay } from "node:timers/promises"
 const api = process.env.E2E_API_URL ?? "http://localhost:4000"
@@ -323,6 +325,69 @@ test("admin validates and imports JSON through the real API", async ({
   await expect(page.getByText("Batch is valid. Ready to import.")).toBeVisible()
   await page.getByRole("button", { name: "Import validated batch" }).click()
   await expect(page.getByText(/Import complete: 1 created/)).toBeVisible()
+  await page.goto("/admin/questions")
+  await page
+    .getByRole("button", {
+      name: new RegExp(document.questions[0].questionKey),
+    })
+    .first()
+    .click()
+  const publication = page.getByRole("combobox", {
+    name: `Publication for ${document.questions[0].questionKey}`,
+  })
+  await publication.click()
+  await page.getByRole("option", { name: "PUBLISHED", exact: true }).click()
+  await page
+    .getByRole("button", { name: "Update publication", exact: true })
+    .click()
+  let saved = page.waitForResponse(
+    (r) => r.url().includes("/publication") && r.request().method() === "PATCH"
+  )
+  await page
+    .getByRole("alertdialog")
+    .getByRole("button", { name: "Update publication", exact: true })
+    .click()
+  expect((await saved).ok()).toBeTruthy()
+  await expect(
+    page.getByText("Publication updated.", { exact: true })
+  ).toBeVisible()
+  if (!(await publication.isVisible()))
+    await page
+      .getByRole("button", {
+        name: new RegExp(document.questions[0].questionKey),
+      })
+      .click()
+  await publication.click()
+  await page.getByRole("option", { name: "ARCHIVED", exact: true }).click()
+  await page
+    .getByRole("button", { name: "Update publication", exact: true })
+    .click()
+  saved = page.waitForResponse(
+    (r) => r.url().includes("/publication") && r.request().method() === "PATCH"
+  )
+  await page
+    .getByRole("alertdialog")
+    .getByRole("button", { name: "Update publication", exact: true })
+    .click()
+  expect((await saved).ok()).toBeTruthy()
+  await page
+    .getByRole("tab", { name: "Assessment settings", exact: true })
+    .click()
+  await page
+    .getByRole("button", { name: "Save assessment settings", exact: true })
+    .click()
+  saved = page.waitForResponse(
+    (r) =>
+      r.url().includes("/assessment-configs/") && r.request().method() === "PUT"
+  )
+  await page
+    .getByRole("alertdialog")
+    .getByRole("button", { name: "Save settings", exact: true })
+    .click()
+  expect((await saved).ok()).toBeTruthy()
+  await page.getByRole("tab", { name: "Audit trail", exact: true }).click()
+  await expect(page.getByRole("table")).toBeVisible()
+  await expect(page.getByRole("row")).not.toHaveCount(1)
 })
 
 test("only one tab edits an attempt and the lease transfers after closing it", async ({
@@ -404,6 +469,15 @@ test("a committed result updates another browser through SSE", async ({
   )
   expect(submission.ok()).toBeTruthy()
   await expect(page.getByText(name, { exact: true }).first()).toBeVisible()
+  expect(
+    (
+      await request.patch(`${api}/api/v1/me/preferences`, {
+        headers: { Origin: origin },
+        data: { publicProfile: false },
+      })
+    ).ok()
+  ).toBeTruthy()
+  await expect(page.getByText(name, { exact: true })).toHaveCount(0)
 })
 test("mobile workspace and assessment fit without page overflow", async ({
   page,
@@ -432,4 +506,177 @@ test("mobile workspace and assessment fit without page overflow", async ({
     path: "test-results/connected-mobile.png",
     fullPage: true,
   })
+})
+
+test("navigation flushes a fresh answer and a failed save keeps the user on the quiz", async ({
+  page,
+}) => {
+  await register(page)
+  const id = await start(page)
+  await page.getByRole("link", { name: "History", exact: true }).hover()
+  await page.locator(".answer-option").first().click()
+  await page.getByRole("link", { name: "History", exact: true }).click()
+  await expect(page).toHaveURL(/\/history$/)
+  const saved = (
+    await (await page.request.get(`${api}/api/v1/attempts/${id}`)).json()
+  ).data
+  expect(saved.questions[0].selected).toHaveLength(1)
+  await page.goto(`/assessments/javascript/take?attempt=${id}`)
+  await page.locator(".quiz-question").waitFor()
+  await page.route("**/answers/*", (route) => route.abort("failed"))
+  await page.locator(".answer-option").nth(1).click()
+  await page.getByRole("link", { name: "History", exact: true }).click()
+  await expect(page.getByRole("alertdialog")).toBeVisible()
+  await expect(page).toHaveURL(/attempt=/)
+  await page.unroute("**/answers/*")
+  await page.getByRole("button", { name: "Retry save", exact: true }).click()
+  await expect(page).toHaveURL(/\/history$/)
+  const recovered = (
+    await (await page.request.get(`${api}/api/v1/attempts/${id}`)).json()
+  ).data
+  expect(recovered.questions[0].selected).toContain(
+    saved.questions[0].options[1].id
+  )
+})
+
+test("account changes synchronize tabs and stale identity requests are rejected", async ({
+  page,
+  context,
+}) => {
+  await register(page)
+  const first = (await (await page.request.get(`${api}/api/v1/me`)).json()).data
+  await page.goto("/profile")
+  const other = await context.newPage()
+  await register(other)
+  const second = (await (await other.request.get(`${api}/api/v1/me`)).json())
+    .data
+  expect(first.id).not.toBe(second.id)
+  await expect(page).toHaveURL(/\/assessments$/)
+  const stale = await page.request.patch(`${api}/api/v1/me`, {
+    headers: { Origin: origin, "X-Lunaris-User": first.id },
+    data: { displayName: "Wrong account write" },
+  })
+  expect(stale.status()).toBe(409)
+  expect((await stale.json()).code).toBe("SESSION_CHANGED")
+  await page.goto("/profile")
+  await expect(
+    page.getByText(`Email: ${second.email}`, { exact: true })
+  ).toBeVisible()
+  await expect(page.getByText(first.email, { exact: true })).toHaveCount(0)
+})
+
+test("activity errors do not block profile or an assessment and timer preferences apply", async ({
+  page,
+}) => {
+  await register(page)
+  await page.route("**/api/v1/stats/activity", (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "application/problem+json",
+      body: JSON.stringify({
+        detail: "Activity temporarily unavailable",
+        code: "UNAVAILABLE",
+      }),
+    })
+  )
+  await page.goto("/profile")
+  await expect(
+    page.getByRole("button", { name: "Edit profile", exact: true })
+  ).toBeVisible()
+  await page.goto("/settings")
+  const saved = page.waitForResponse(
+    (r) =>
+      r.url().endsWith("/me/preferences") && r.request().method() === "PATCH"
+  )
+  await page
+    .getByRole("switch", { name: "Show the timer", exact: true })
+    .uncheck()
+  expect((await saved).ok()).toBeTruthy()
+  await expect(
+    page.getByRole("switch", { name: "Show the timer", exact: true })
+  ).not.toBeChecked()
+  await start(page)
+  await expect(page.getByText(/\d+:\d{2} remaining/)).toHaveCount(0)
+  await expect(page.locator(".quiz-question")).toBeVisible()
+})
+
+test("keyboard date filters use a shadcn calendar instead of a native picker", async ({
+  page,
+}) => {
+  await register(page)
+  await page.goto("/history")
+  await page.getByRole("button", { name: "From (UTC)", exact: true }).click()
+  await expect(page.locator('[data-slot="calendar"]')).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(page.locator('select, input[type="date"]')).toHaveCount(0)
+})
+
+test("visual and accessibility audit of all workspace routes in light/dark and mobile/desktop", async ({
+  page,
+}) => {
+  test.setTimeout(240_000)
+  await register(page)
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  const failures: unknown[] = []
+  for (const mode of ["light", "dark"] as const) {
+    expect(
+      (
+        await page.request.patch(`${api}/api/v1/me/preferences`, {
+          headers: { Origin: origin },
+          data: { mode, reducedMotion: true },
+        })
+      ).ok()
+    ).toBeTruthy()
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 })
+      for (const route of [
+        "assessments",
+        "assessments/javascript",
+        "history",
+        "stats",
+        "leaderboard",
+        "profile",
+        "settings",
+      ]) {
+        await page.goto(`/${route}`)
+        await expect(page.locator("main h1")).toBeVisible()
+        await expect(page.locator("html")).toHaveClass(new RegExp(mode))
+        await page.evaluate(() => document.fonts.ready)
+        const overflow = await page.evaluate(
+          () => document.documentElement.scrollWidth > window.innerWidth
+        )
+        if (overflow)
+          failures.push({
+            mode,
+            width,
+            route,
+            problem: "horizontal page overflow",
+          })
+        const results = await new AxeBuilder({ page })
+          .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+          .analyze()
+        for (const violation of results.violations)
+          failures.push({
+            mode,
+            width,
+            route,
+            id: violation.id,
+            impact: violation.impact,
+            nodes: violation.nodes.map((n) => ({
+              target: n.target,
+              summary: n.failureSummary,
+            })),
+          })
+        await page.screenshot({
+          path: `test-results/visual-audit/${mode}-${width}-${route.replaceAll("/", "-")}.png`,
+          fullPage: true,
+        })
+      }
+    }
+  }
+  await writeFile(
+    "test-results/visual-audit/findings.json",
+    JSON.stringify(failures, null, 2)
+  )
+  expect(failures).toEqual([])
 })

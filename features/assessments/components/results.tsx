@@ -1,5 +1,5 @@
 "use client"
-import Link from "next/link"
+import Link from "@/components/shared/app-link"
 import { useQuery } from "@tanstack/react-query"
 import {
   Accordion,

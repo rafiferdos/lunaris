@@ -1,4 +1,5 @@
 "use client"
+import Link from "@/components/shared/app-link"
 import { useState } from "react"
 import { z } from "zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -10,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PageHeader, Panel, Metric, EmptyState } from "@/components/shared/ui"
 import { MutationError } from "@/components/shared/query-state"
 import { useSession } from "@/features/auth/auth-boundary"
-import { api, unwrap } from "@/lib/api/client"
+import { apiFor, unwrap } from "@/lib/api/client"
 import { invalidateProgress } from "@/lib/api/queries"
 import {
   importDocumentSchema,
@@ -31,7 +32,9 @@ export function QuestionImport() {
       const body = envelope.parse(JSON.parse(text))
       return (
         await unwrap(
-          api.POST("/api/v1/admin/questions/import/validate", { body })
+          apiFor(user.id).POST("/api/v1/admin/questions/import/validate", {
+            body,
+          })
         )
       ).data
     },
@@ -41,7 +44,7 @@ export function QuestionImport() {
     mutationFn: async () =>
       (
         await unwrap(
-          api.POST("/api/v1/admin/questions/import", {
+          apiFor(user.id).POST("/api/v1/admin/questions/import", {
             body: importDocumentSchema.parse(JSON.parse(input)),
           })
         )
@@ -86,6 +89,9 @@ export function QuestionImport() {
   const report = validatedInput === input ? validation.data : undefined
   return (
     <>
+      <Link href="/admin/questions" className="text-link mb-6">
+        Back to question bank
+      </Link>
       <PageHeader
         eyebrow="ADMINISTRATION"
         title="Question import"

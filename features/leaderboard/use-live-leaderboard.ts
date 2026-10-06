@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { API_URL } from "@/lib/api/client"
+import { API_URL, SESSION_EXPIRED } from "@/lib/api/client"
 import { useSession } from "@/features/auth/auth-boundary"
 import { privateKey } from "@/lib/api/queries"
 export function useLiveLeaderboard(onRefresh: () => void) {
@@ -30,6 +30,10 @@ export function useLiveLeaderboard(onRefresh: () => void) {
     }
     stream.addEventListener("connected", open)
     stream.addEventListener("leaderboard.updated", refresh)
+    stream.addEventListener("session.expired", () => {
+      stream.close()
+      window.dispatchEvent(new Event(SESSION_EXPIRED))
+    })
     stream.onerror = () => setConnected(false)
     return () => {
       clearTimeout(timer)

@@ -1,6 +1,6 @@
 "use client"
 import { useQueries } from "@tanstack/react-query"
-import Link from "next/link"
+import Link from "@/components/shared/app-link"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import {
   PageHeader,
@@ -11,16 +11,28 @@ import {
 } from "@/components/shared/ui"
 import { QueryState } from "@/components/shared/query-state"
 import { LazyTrend } from "@/components/charts/lazy-trend"
-import { useWorkspace } from "@/features/workspace/workspace-provider"
 import { useSession } from "@/features/auth/auth-boundary"
 import { queries } from "@/lib/api/queries"
 import { percent, dateTime } from "@/lib/format"
 export function StatsPage() {
-  const { overview: o, activity } = useWorkspace(),
-    { user } = useSession()
-  const [performance, topics] = useQueries({
-    queries: [queries.performance(user.id), queries.topics(user.id)],
+  const { user } = useSession()
+  const [performance, topics, overview, activityQuery] = useQueries({
+    queries: [
+      queries.performance(user.id),
+      queries.topics(user.id),
+      queries.overview(user.id),
+      queries.activity(user.id),
+    ],
   })
+  if (!overview.data || !activityQuery.data)
+    return (
+      <QueryState
+        error={overview.error || activityQuery.error}
+        retry={() => Promise.all([overview.refetch(), activityQuery.refetch()])}
+      />
+    )
+  const o = overview.data,
+    activity = activityQuery.data
   return (
     <>
       <PageHeader

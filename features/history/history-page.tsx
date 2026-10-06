@@ -1,8 +1,7 @@
 "use client"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { DatePicker } from "@/components/shared/date-picker"
 import { useState } from "react"
-import Link from "next/link"
+import Link from "@/components/shared/app-link"
 import { useQuery } from "@tanstack/react-query"
 import {
   PageHeader,
@@ -23,13 +22,16 @@ import {
 } from "@/components/ui/table"
 import { QueryState } from "@/components/shared/query-state"
 import { useSession } from "@/features/auth/auth-boundary"
-import { useWorkspace } from "@/features/workspace/workspace-provider"
 import { queries } from "@/lib/api/queries"
 import type { HistoryFilters } from "@/lib/api/types"
 import { percent, dateTime, signed } from "@/lib/format"
 import { CursorPagination } from "@/components/shared/cursor-pagination"
 export function HistoryPage() {
-  const { assessments, overview } = useWorkspace()
+  const { user } = useSession()
+  const catalog = useQuery(queries.assessments(user.id)),
+    overviewQuery = useQuery(queries.overview(user.id))
+  const overview = overviewQuery.data,
+    assessments = catalog.data ?? []
   const [topic, setTopic] = useState("all"),
     [mode, setMode] = useState("all"),
     [status, setStatus] = useState("all")
@@ -55,16 +57,26 @@ export function HistoryPage() {
         description="Every attempt, saved to your account."
       />
       <Panel>
-        <div className="metric-grid">
-          <Metric label="Completed" value={overview.assessmentCount} />
-          <Metric
-            label="Average performance"
-            value={percent(overview.averageNormalizedScore)}
+        {overview ? (
+          <div className="metric-grid">
+            <Metric label="Completed" value={overview.assessmentCount} />
+            <Metric
+              label="Average performance"
+              value={percent(overview.averageNormalizedScore)}
+            />
+            <Metric label="Total XP" value={overview.totalXp} />
+            <Metric label="Rating" value={overview.rating} />
+          </div>
+        ) : (
+          <QueryState
+            error={overviewQuery.error}
+            retry={overviewQuery.refetch}
           />
-          <Metric label="Total XP" value={overview.totalXp} />
-          <Metric label="Rating" value={overview.rating} />
-        </div>
+        )}
       </Panel>
+      {catalog.error && (
+        <QueryState error={catalog.error} retry={catalog.refetch} />
+      )}
       <div className="section-space mb-5 flex flex-wrap gap-3">
         <Select
           label="History topic"
@@ -110,24 +122,18 @@ export function HistoryPage() {
             "INTERPERSONAL",
           ]}
         />
-        <Label className="field">
-          From (UTC)
-          <Input
-            type="date"
-            value={from}
-            max={to || undefined}
-            onChange={(e) => setFrom(e.target.value)}
-          />
-        </Label>
-        <Label className="field">
-          To (UTC)
-          <Input
-            type="date"
-            value={to}
-            min={from || undefined}
-            onChange={(e) => setTo(e.target.value)}
-          />
-        </Label>
+        <DatePicker
+          label="From (UTC)"
+          value={from}
+          max={to || undefined}
+          onChange={setFrom}
+        />
+        <DatePicker
+          label="To (UTC)"
+          value={to}
+          min={from || undefined}
+          onChange={setTo}
+        />
       </div>
       <HistoryTable key={JSON.stringify(filters)} filters={filters} />
     </>

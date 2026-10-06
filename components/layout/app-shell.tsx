@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import Link from "next/link"
+import Link from "@/components/shared/app-link"
 import { usePathname } from "next/navigation"
 import {
   Orbit,
@@ -46,8 +46,8 @@ import {
   PopoverDescription,
 } from "@/components/ui/popover"
 import { useAvailability } from "@/features/history/use-attempts"
-import { activitySummary } from "@/features/stats/activity"
-import { useWorkspace } from "@/features/workspace/workspace-provider"
+import { useQuery } from "@tanstack/react-query"
+import { queries } from "@/lib/api/queries"
 import { useSignOut } from "@/features/auth/auth-boundary"
 import { MutationError } from "@/components/shared/query-state"
 import { useProfile } from "@/features/profile/use-profile"
@@ -82,9 +82,9 @@ function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const { state, isMobile, setOpenMobile } = useSidebar()
   const [notifications, setNotifications] = useState(false)
   const profile = useProfile()
-  const { activity: activityData, assessments } = useWorkspace()
+  const activityQuery = useQuery(queries.activity(profile.id)),
+    catalog = useQuery(queries.assessments(profile.id))
   const signOut = useSignOut()
-  const activity = activitySummary(activityData)
   const availability = useAvailability()
   const collapsed = state === "collapsed" && !isMobile
   const current =
@@ -108,8 +108,8 @@ function WorkspaceShell({ children }: { children: React.ReactNode }) {
               <Icon />
               <span>{label}</span>
             </SidebarMenuButton>
-            {label === "Assessments" && (
-              <SidebarMenuBadge>{assessments.length}</SidebarMenuBadge>
+            {label === "Assessments" && catalog.data && (
+              <SidebarMenuBadge>{catalog.data?.length}</SidebarMenuBadge>
             )}
           </SidebarMenuItem>
         ))}
@@ -165,12 +165,12 @@ function WorkspaceShell({ children }: { children: React.ReactNode }) {
               <p>
                 Consistency is a skill, too.
                 <br />
-                {activity.current
-                  ? `Keep your ${activity.current}-day streak going.`
+                {activityQuery.data?.currentStreak
+                  ? `Keep your ${activityQuery.data.currentStreak}-day streak going.`
                   : "Make today a fresh start."}
               </p>
               <Progress
-                value={(availability.week / 7) * 100}
+                value={(availability.week / availability.weeklyLimit) * 100}
                 label="Weekly practice"
               />
               <Link href="/stats" onClick={() => setOpenMobile(false)}>
@@ -180,10 +180,7 @@ function WorkspaceShell({ children }: { children: React.ReactNode }) {
           )}
           <nav aria-label="Account navigation">{menu(accountNavigation)}</nav>
           {profile.role === "ADMIN" && (
-            <Link
-              href="/admin/questions/import"
-              className="text-link px-4 py-2"
-            >
+            <Link href="/admin/questions" className="text-link px-4 py-2">
               Question import
             </Link>
           )}
@@ -265,9 +262,11 @@ function WorkspaceShell({ children }: { children: React.ReactNode }) {
                   </Button>
                 </div>
                 <PopoverDescription>
-                  {availability.locked
-                    ? "Your quota is used. Check assessment availability for the next UTC reset."
-                    : "You can start an assessment today."}
+                  {!availability.loaded
+                    ? "Assessment availability could not be loaded yet."
+                    : availability.locked
+                      ? "Your quota is used. Check assessment availability for the next UTC reset."
+                      : "You can start an assessment today."}
                 </PopoverDescription>
                 <Button
                   variant="link"
