@@ -3258,6 +3258,68 @@
                                             "minimum": 5,
                                             "maximum": 1800
                                           },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           "status": {
                                             "type": "string",
                                             "enum": [
@@ -3382,6 +3444,68 @@
                                             "minimum": 5,
                                             "maximum": 1800
                                           },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           "status": {
                                             "type": "string",
                                             "enum": [
@@ -3505,6 +3629,68 @@
                                             "type": "integer",
                                             "minimum": 5,
                                             "maximum": 1800
+                                          },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
                                           },
                                           "status": {
                                             "type": "string",
@@ -4295,6 +4481,68 @@
                                             "minimum": 5,
                                             "maximum": 1800
                                           },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           "status": {
                                             "type": "string",
                                             "enum": [
@@ -4419,6 +4667,68 @@
                                             "minimum": 5,
                                             "maximum": 1800
                                           },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           "status": {
                                             "type": "string",
                                             "enum": [
@@ -4542,6 +4852,68 @@
                                             "type": "integer",
                                             "minimum": 5,
                                             "maximum": 1800
+                                          },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
                                           },
                                           "status": {
                                             "type": "string",
@@ -5362,6 +5734,68 @@
                                             "minimum": 5,
                                             "maximum": 1800
                                           },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           "status": {
                                             "type": "string",
                                             "enum": [
@@ -5486,6 +5920,68 @@
                                             "minimum": 5,
                                             "maximum": 1800
                                           },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           "status": {
                                             "type": "string",
                                             "enum": [
@@ -5609,6 +6105,68 @@
                                             "type": "integer",
                                             "minimum": 5,
                                             "maximum": 1800
+                                          },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
                                           },
                                           "status": {
                                             "type": "string",
@@ -6411,6 +6969,68 @@
                                             "minimum": 5,
                                             "maximum": 1800
                                           },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           "status": {
                                             "type": "string",
                                             "enum": [
@@ -6535,6 +7155,68 @@
                                             "minimum": 5,
                                             "maximum": 1800
                                           },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           "status": {
                                             "type": "string",
                                             "enum": [
@@ -6658,6 +7340,68 @@
                                             "type": "integer",
                                             "minimum": 5,
                                             "maximum": 1800
+                                          },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
                                           },
                                           "status": {
                                             "type": "string",
@@ -7448,6 +8192,68 @@
                                             "minimum": 5,
                                             "maximum": 1800
                                           },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           "status": {
                                             "type": "string",
                                             "enum": [
@@ -7572,6 +8378,68 @@
                                             "minimum": 5,
                                             "maximum": 1800
                                           },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           "status": {
                                             "type": "string",
                                             "enum": [
@@ -7695,6 +8563,68 @@
                                             "type": "integer",
                                             "minimum": 5,
                                             "maximum": 1800
+                                          },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
                                           },
                                           "status": {
                                             "type": "string",
@@ -8526,6 +9456,68 @@
                                             "minimum": 5,
                                             "maximum": 1800
                                           },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           "status": {
                                             "type": "string",
                                             "enum": [
@@ -8650,6 +9642,68 @@
                                             "minimum": 5,
                                             "maximum": 1800
                                           },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           "status": {
                                             "type": "string",
                                             "enum": [
@@ -8773,6 +9827,68 @@
                                             "type": "integer",
                                             "minimum": 5,
                                             "maximum": 1800
+                                          },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
                                           },
                                           "status": {
                                             "type": "string",
@@ -9593,6 +10709,68 @@
                                             "minimum": 5,
                                             "maximum": 1800
                                           },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           "status": {
                                             "type": "string",
                                             "enum": [
@@ -9717,6 +10895,68 @@
                                             "minimum": 5,
                                             "maximum": 1800
                                           },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           "status": {
                                             "type": "string",
                                             "enum": [
@@ -9840,6 +11080,68 @@
                                             "type": "integer",
                                             "minimum": 5,
                                             "maximum": 1800
+                                          },
+                                          "provenance": {
+                                            "type": "object",
+                                            "properties": {
+                                              "collectionId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                              },
+                                              "authorship": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "ORIGINAL_SOURCE_BASED"
+                                                ]
+                                              },
+                                              "sources": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "format": "uri"
+                                                    },
+                                                    "title": {
+                                                      "type": "string",
+                                                      "minLength": 3,
+                                                      "maxLength": 240
+                                                    },
+                                                    "accessedOn": {
+                                                      "type": "string",
+                                                      "format": "date"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url",
+                                                    "title",
+                                                    "accessedOn"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "minItems": 1,
+                                                "maxItems": 6
+                                              },
+                                              "learningObjective": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              },
+                                              "difficultyRationale": {
+                                                "type": "string",
+                                                "minLength": 10,
+                                                "maxLength": 1000
+                                              }
+                                            },
+                                            "required": [
+                                              "collectionId",
+                                              "authorship",
+                                              "sources",
+                                              "learningObjective",
+                                              "difficultyRationale"
+                                            ],
+                                            "additionalProperties": false
                                           },
                                           "status": {
                                             "type": "string",
@@ -12923,6 +14225,62 @@
                               "minimum": 5,
                               "maximum": 1800
                             },
+                            "provenance": {
+                              "type": "object",
+                              "properties": {
+                                "collectionId": {
+                                  "type": "string",
+                                  "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                },
+                                "authorship": {
+                                  "type": "string",
+                                  "enum": ["ORIGINAL_SOURCE_BASED"]
+                                },
+                                "sources": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "url": {
+                                        "type": "string",
+                                        "format": "uri"
+                                      },
+                                      "title": {
+                                        "type": "string",
+                                        "minLength": 3,
+                                        "maxLength": 240
+                                      },
+                                      "accessedOn": {
+                                        "type": "string",
+                                        "format": "date"
+                                      }
+                                    },
+                                    "required": ["url", "title", "accessedOn"],
+                                    "additionalProperties": false
+                                  },
+                                  "minItems": 1,
+                                  "maxItems": 6
+                                },
+                                "learningObjective": {
+                                  "type": "string",
+                                  "minLength": 10,
+                                  "maxLength": 1000
+                                },
+                                "difficultyRationale": {
+                                  "type": "string",
+                                  "minLength": 10,
+                                  "maxLength": 1000
+                                }
+                              },
+                              "required": [
+                                "collectionId",
+                                "authorship",
+                                "sources",
+                                "learningObjective",
+                                "difficultyRationale"
+                              ],
+                              "additionalProperties": false
+                            },
                             "status": {
                               "type": "string",
                               "enum": ["DRAFT", "PUBLISHED", "ARCHIVED"]
@@ -13022,6 +14380,62 @@
                               "minimum": 5,
                               "maximum": 1800
                             },
+                            "provenance": {
+                              "type": "object",
+                              "properties": {
+                                "collectionId": {
+                                  "type": "string",
+                                  "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                },
+                                "authorship": {
+                                  "type": "string",
+                                  "enum": ["ORIGINAL_SOURCE_BASED"]
+                                },
+                                "sources": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "url": {
+                                        "type": "string",
+                                        "format": "uri"
+                                      },
+                                      "title": {
+                                        "type": "string",
+                                        "minLength": 3,
+                                        "maxLength": 240
+                                      },
+                                      "accessedOn": {
+                                        "type": "string",
+                                        "format": "date"
+                                      }
+                                    },
+                                    "required": ["url", "title", "accessedOn"],
+                                    "additionalProperties": false
+                                  },
+                                  "minItems": 1,
+                                  "maxItems": 6
+                                },
+                                "learningObjective": {
+                                  "type": "string",
+                                  "minLength": 10,
+                                  "maxLength": 1000
+                                },
+                                "difficultyRationale": {
+                                  "type": "string",
+                                  "minLength": 10,
+                                  "maxLength": 1000
+                                }
+                              },
+                              "required": [
+                                "collectionId",
+                                "authorship",
+                                "sources",
+                                "learningObjective",
+                                "difficultyRationale"
+                              ],
+                              "additionalProperties": false
+                            },
                             "status": {
                               "type": "string",
                               "enum": ["DRAFT", "PUBLISHED", "ARCHIVED"]
@@ -13120,6 +14534,62 @@
                               "type": "integer",
                               "minimum": 5,
                               "maximum": 1800
+                            },
+                            "provenance": {
+                              "type": "object",
+                              "properties": {
+                                "collectionId": {
+                                  "type": "string",
+                                  "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                },
+                                "authorship": {
+                                  "type": "string",
+                                  "enum": ["ORIGINAL_SOURCE_BASED"]
+                                },
+                                "sources": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "url": {
+                                        "type": "string",
+                                        "format": "uri"
+                                      },
+                                      "title": {
+                                        "type": "string",
+                                        "minLength": 3,
+                                        "maxLength": 240
+                                      },
+                                      "accessedOn": {
+                                        "type": "string",
+                                        "format": "date"
+                                      }
+                                    },
+                                    "required": ["url", "title", "accessedOn"],
+                                    "additionalProperties": false
+                                  },
+                                  "minItems": 1,
+                                  "maxItems": 6
+                                },
+                                "learningObjective": {
+                                  "type": "string",
+                                  "minLength": 10,
+                                  "maxLength": 1000
+                                },
+                                "difficultyRationale": {
+                                  "type": "string",
+                                  "minLength": 10,
+                                  "maxLength": 1000
+                                }
+                              },
+                              "required": [
+                                "collectionId",
+                                "authorship",
+                                "sources",
+                                "learningObjective",
+                                "difficultyRationale"
+                              ],
+                              "additionalProperties": false
                             },
                             "status": {
                               "type": "string",
@@ -13587,6 +15057,66 @@
                                     "minimum": 5,
                                     "maximum": 1800
                                   },
+                                  "provenance": {
+                                    "type": "object",
+                                    "properties": {
+                                      "collectionId": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                      },
+                                      "authorship": {
+                                        "type": "string",
+                                        "enum": ["ORIGINAL_SOURCE_BASED"]
+                                      },
+                                      "sources": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "url": {
+                                              "type": "string",
+                                              "format": "uri"
+                                            },
+                                            "title": {
+                                              "type": "string",
+                                              "minLength": 3,
+                                              "maxLength": 240
+                                            },
+                                            "accessedOn": {
+                                              "type": "string",
+                                              "format": "date"
+                                            }
+                                          },
+                                          "required": [
+                                            "url",
+                                            "title",
+                                            "accessedOn"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "minItems": 1,
+                                        "maxItems": 6
+                                      },
+                                      "learningObjective": {
+                                        "type": "string",
+                                        "minLength": 10,
+                                        "maxLength": 1000
+                                      },
+                                      "difficultyRationale": {
+                                        "type": "string",
+                                        "minLength": 10,
+                                        "maxLength": 1000
+                                      }
+                                    },
+                                    "required": [
+                                      "collectionId",
+                                      "authorship",
+                                      "sources",
+                                      "learningObjective",
+                                      "difficultyRationale"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   "status": {
                                     "type": "string",
                                     "enum": ["DRAFT", "PUBLISHED", "ARCHIVED"]
@@ -13698,6 +15228,66 @@
                                     "minimum": 5,
                                     "maximum": 1800
                                   },
+                                  "provenance": {
+                                    "type": "object",
+                                    "properties": {
+                                      "collectionId": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                      },
+                                      "authorship": {
+                                        "type": "string",
+                                        "enum": ["ORIGINAL_SOURCE_BASED"]
+                                      },
+                                      "sources": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "url": {
+                                              "type": "string",
+                                              "format": "uri"
+                                            },
+                                            "title": {
+                                              "type": "string",
+                                              "minLength": 3,
+                                              "maxLength": 240
+                                            },
+                                            "accessedOn": {
+                                              "type": "string",
+                                              "format": "date"
+                                            }
+                                          },
+                                          "required": [
+                                            "url",
+                                            "title",
+                                            "accessedOn"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "minItems": 1,
+                                        "maxItems": 6
+                                      },
+                                      "learningObjective": {
+                                        "type": "string",
+                                        "minLength": 10,
+                                        "maxLength": 1000
+                                      },
+                                      "difficultyRationale": {
+                                        "type": "string",
+                                        "minLength": 10,
+                                        "maxLength": 1000
+                                      }
+                                    },
+                                    "required": [
+                                      "collectionId",
+                                      "authorship",
+                                      "sources",
+                                      "learningObjective",
+                                      "difficultyRationale"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   "status": {
                                     "type": "string",
                                     "enum": ["DRAFT", "PUBLISHED", "ARCHIVED"]
@@ -13808,6 +15398,66 @@
                                     "type": "integer",
                                     "minimum": 5,
                                     "maximum": 1800
+                                  },
+                                  "provenance": {
+                                    "type": "object",
+                                    "properties": {
+                                      "collectionId": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9][a-z0-9_-]{2,100}$"
+                                      },
+                                      "authorship": {
+                                        "type": "string",
+                                        "enum": ["ORIGINAL_SOURCE_BASED"]
+                                      },
+                                      "sources": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "url": {
+                                              "type": "string",
+                                              "format": "uri"
+                                            },
+                                            "title": {
+                                              "type": "string",
+                                              "minLength": 3,
+                                              "maxLength": 240
+                                            },
+                                            "accessedOn": {
+                                              "type": "string",
+                                              "format": "date"
+                                            }
+                                          },
+                                          "required": [
+                                            "url",
+                                            "title",
+                                            "accessedOn"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "minItems": 1,
+                                        "maxItems": 6
+                                      },
+                                      "learningObjective": {
+                                        "type": "string",
+                                        "minLength": 10,
+                                        "maxLength": 1000
+                                      },
+                                      "difficultyRationale": {
+                                        "type": "string",
+                                        "minLength": 10,
+                                        "maxLength": 1000
+                                      }
+                                    },
+                                    "required": [
+                                      "collectionId",
+                                      "authorship",
+                                      "sources",
+                                      "learningObjective",
+                                      "difficultyRationale"
+                                    ],
+                                    "additionalProperties": false
                                   },
                                   "status": {
                                     "type": "string",

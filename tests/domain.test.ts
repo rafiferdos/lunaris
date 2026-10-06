@@ -5,7 +5,7 @@ import { remainingSeconds } from "../features/assessments/hooks/use-countdown"
 import { getStartRequestKey } from "../features/assessments/hooks/start-request"
 import {
   importDocumentSchema,
-  importExample,
+  emptyImport,
 } from "../features/admin/import-schema"
 import { ApiError, unwrap, apiFetch } from "../lib/api/client"
 import { percent } from "../lib/format"
@@ -64,6 +64,29 @@ test("countdown uses server clock offset and clamps at expiry", () => {
   )
 })
 test("import transport schema rejects weighted/objective metadata mixing", () => {
+  assert.equal(importDocumentSchema.safeParse(emptyImport).success, false)
+  const importExample = {
+    schemaVersion: 1 as const,
+    questions: [
+      {
+        questionKey: "synthetic-fixture",
+        version: 1,
+        topicSlug: "javascript",
+        category: "TECHNICAL" as const,
+        difficulty: "FOUNDATIONAL" as const,
+        type: "SINGLE_CHOICE" as const,
+        prompt: "Synthetic token fixture",
+        options: [
+          { id: "a", text: "Token A", isCorrect: true },
+          { id: "b", text: "Token B", isCorrect: false },
+        ],
+        explanation: "Test-only synthetic data.",
+        tags: ["fixture"],
+        estimatedTimeSeconds: 30,
+        status: "DRAFT" as const,
+      },
+    ],
+  }
   assert.equal(importDocumentSchema.safeParse(importExample).success, true)
   const q = importExample.questions[0]
   assert.equal(

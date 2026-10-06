@@ -146,6 +146,25 @@ export function Results({ attemptId }: { attemptId: string }) {
                   </ul>
                   {!review.selected.length && <p className="muted">Skipped</p>}
                   <p className="text-sm leading-7">{q.explanation}</p>
+                  {q.provenance && (
+                    <div className="mt-4 space-y-2 text-sm">
+                      <p className="muted">Further reading</p>
+                      <ul className="space-y-2">
+                        {q.provenance.sources.map((source) => (
+                          <li key={source.url}>
+                            <a
+                              className="text-link break-words"
+                              href={source.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {source.title}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <p className="muted mt-3 text-xs">
                     {q.tags.join(" · ")}
                     {review.responseTimeMs != null

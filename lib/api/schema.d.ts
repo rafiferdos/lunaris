@@ -1938,6 +1938,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -1964,6 +1978,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -1990,6 +2018,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -2353,6 +2395,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -2379,6 +2435,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -2405,6 +2475,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -2779,6 +2863,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -2805,6 +2903,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -2831,6 +2943,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -3201,6 +3327,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -3227,6 +3367,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -3253,6 +3407,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -3616,6 +3784,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -3642,6 +3824,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -3668,6 +3864,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -4054,6 +4264,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -4080,6 +4304,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -4106,6 +4344,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -4483,6 +4735,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -4509,6 +4775,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -4535,6 +4815,20 @@ export interface paths {
                           explanation: string
                           tags: string[]
                           estimatedTimeSeconds: number
+                          provenance?: {
+                            collectionId: string
+                            /** @enum {string} */
+                            authorship: "ORIGINAL_SOURCE_BASED"
+                            sources: {
+                              /** Format: uri */
+                              url: string
+                              title: string
+                              /** Format: date */
+                              accessedOn: string
+                            }[]
+                            learningObjective: string
+                            difficultyRationale: string
+                          }
                           /** @enum {string} */
                           status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                           /** @enum {string} */
@@ -6411,6 +6705,20 @@ export interface paths {
                   explanation: string
                   tags: string[]
                   estimatedTimeSeconds: number
+                  provenance?: {
+                    collectionId: string
+                    /** @enum {string} */
+                    authorship: "ORIGINAL_SOURCE_BASED"
+                    sources: {
+                      /** Format: uri */
+                      url: string
+                      title: string
+                      /** Format: date */
+                      accessedOn: string
+                    }[]
+                    learningObjective: string
+                    difficultyRationale: string
+                  }
                   /** @enum {string} */
                   status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                   /** @enum {string} */
@@ -6436,6 +6744,20 @@ export interface paths {
                   explanation: string
                   tags: string[]
                   estimatedTimeSeconds: number
+                  provenance?: {
+                    collectionId: string
+                    /** @enum {string} */
+                    authorship: "ORIGINAL_SOURCE_BASED"
+                    sources: {
+                      /** Format: uri */
+                      url: string
+                      title: string
+                      /** Format: date */
+                      accessedOn: string
+                    }[]
+                    learningObjective: string
+                    difficultyRationale: string
+                  }
                   /** @enum {string} */
                   status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                   /** @enum {string} */
@@ -6461,6 +6783,20 @@ export interface paths {
                   explanation: string
                   tags: string[]
                   estimatedTimeSeconds: number
+                  provenance?: {
+                    collectionId: string
+                    /** @enum {string} */
+                    authorship: "ORIGINAL_SOURCE_BASED"
+                    sources: {
+                      /** Format: uri */
+                      url: string
+                      title: string
+                      /** Format: date */
+                      accessedOn: string
+                    }[]
+                    learningObjective: string
+                    difficultyRationale: string
+                  }
                   /** @enum {string} */
                   status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                   /** @enum {string} */
@@ -6717,6 +7053,20 @@ export interface paths {
                       explanation: string
                       tags: string[]
                       estimatedTimeSeconds: number
+                      provenance?: {
+                        collectionId: string
+                        /** @enum {string} */
+                        authorship: "ORIGINAL_SOURCE_BASED"
+                        sources: {
+                          /** Format: uri */
+                          url: string
+                          title: string
+                          /** Format: date */
+                          accessedOn: string
+                        }[]
+                        learningObjective: string
+                        difficultyRationale: string
+                      }
                       /** @enum {string} */
                       status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                       /** @enum {string} */
@@ -6742,6 +7092,20 @@ export interface paths {
                       explanation: string
                       tags: string[]
                       estimatedTimeSeconds: number
+                      provenance?: {
+                        collectionId: string
+                        /** @enum {string} */
+                        authorship: "ORIGINAL_SOURCE_BASED"
+                        sources: {
+                          /** Format: uri */
+                          url: string
+                          title: string
+                          /** Format: date */
+                          accessedOn: string
+                        }[]
+                        learningObjective: string
+                        difficultyRationale: string
+                      }
                       /** @enum {string} */
                       status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                       /** @enum {string} */
@@ -6767,6 +7131,20 @@ export interface paths {
                       explanation: string
                       tags: string[]
                       estimatedTimeSeconds: number
+                      provenance?: {
+                        collectionId: string
+                        /** @enum {string} */
+                        authorship: "ORIGINAL_SOURCE_BASED"
+                        sources: {
+                          /** Format: uri */
+                          url: string
+                          title: string
+                          /** Format: date */
+                          accessedOn: string
+                        }[]
+                        learningObjective: string
+                        difficultyRationale: string
+                      }
                       /** @enum {string} */
                       status: "DRAFT" | "PUBLISHED" | "ARCHIVED"
                       /** @enum {string} */

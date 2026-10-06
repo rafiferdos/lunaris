@@ -13,6 +13,21 @@ const common = {
   explanation: z.string(),
   tags: z.array(z.string()),
   estimatedTimeSeconds: z.number(),
+  provenance: z
+    .strictObject({
+      collectionId: z.string(),
+      authorship: z.literal("ORIGINAL_SOURCE_BASED"),
+      sources: z.array(
+        z.strictObject({
+          url: z.url(),
+          title: z.string(),
+          accessedOn: z.iso.date(),
+        })
+      ),
+      learningObjective: z.string(),
+      difficultyRationale: z.string(),
+    })
+    .optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
 }
 const option = z.strictObject({ id: z.string(), text: z.string() })
@@ -45,26 +60,4 @@ export const importDocumentSchema = z.strictObject({
     .min(1)
     .max(1000),
 }) satisfies z.ZodType<ImportDocument>
-export const importExample: ImportDocument = {
-  schemaVersion: 1,
-  questions: [
-    {
-      questionKey: "javascript-immutable-binding-example",
-      version: 1,
-      topicSlug: "javascript",
-      category: "TECHNICAL",
-      difficulty: "FOUNDATIONAL",
-      type: "SINGLE_CHOICE",
-      prompt: "Which declaration prevents reassigning the variable binding?",
-      options: [
-        { id: "a", text: "const", isCorrect: true },
-        { id: "b", text: "let", isCorrect: false },
-      ],
-      explanation:
-        "const prevents reassignment of a binding. It does not make an object deeply immutable.",
-      tags: ["variables"],
-      estimatedTimeSeconds: 30,
-      status: "DRAFT",
-    },
-  ],
-}
+export const emptyImport: ImportDocument = { schemaVersion: 1, questions: [] }

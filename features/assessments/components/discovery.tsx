@@ -81,6 +81,11 @@ function DiscoveryContent({
   activityData: GetResponse<"/api/v1/stats/activity">["data"]
 }) {
   const topics = assessments.map(topicView)
+  const recommended = assessments.find((topic) => topic.slug === "react")
+  const recommendedMode = recommended?.modes.find(
+    (mode) => mode.mode === "MEDIUM" && mode.available
+  )
+
   const filters = useUrlFilters()
   const [expanded, setExpanded] = useState(false)
   const recentQuery = useRecentAttempts()
@@ -365,8 +370,16 @@ function DiscoveryContent({
               Continue React <ArrowRight size={16} />
             </Button>
             <div className="recommendation-foot">
-              <span>5 questions</span>
-              <span>8 minutes</span>
+              <span>
+                {recommendedMode
+                  ? `${recommendedMode.questionCount} questions`
+                  : "Choose a level"}
+              </span>
+              <span>
+                {recommendedMode
+                  ? `${Math.ceil(recommendedMode.durationSeconds / 60)} minutes`
+                  : "Available levels"}
+              </span>
             </div>
           </section>
           <section className="aside-section">

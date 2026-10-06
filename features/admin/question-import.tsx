@@ -15,7 +15,7 @@ import { apiFor, unwrap } from "@/lib/api/client"
 import { invalidateProgress } from "@/lib/api/queries"
 import {
   importDocumentSchema,
-  importExample,
+  emptyImport,
 } from "@/features/admin/import-schema"
 const envelope = z.strictObject({
   schemaVersion: z.literal(1),
@@ -103,9 +103,9 @@ export function QuestionImport() {
             <h3>Question JSON</h3>
             <Button
               variant="outline"
-              onClick={() => edit(JSON.stringify(importExample, null, 2))}
+              onClick={() => edit(JSON.stringify(emptyImport, null, 2))}
             >
-              Load example
+              Start empty document
             </Button>
           </div>
           <Label htmlFor="question-json" className="sr-only">
@@ -189,8 +189,8 @@ export function QuestionImport() {
           )}
           <p className="muted mt-6 text-sm">
             Existing question content is immutable. Increment the version to
-            change content. The example is a draft and does not enter active
-            assessments until published.
+            change content. Upload your question document and validate it before
+            importing. Draft questions enter assessments only after publication.
           </p>
         </Panel>
       </div>

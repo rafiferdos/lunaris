@@ -113,9 +113,9 @@ test("signup, autosave, reload, finalize, profile, preferences and logout", asyn
     ])
   )
   expect(resumed.questions[0].selected).toHaveLength(1)
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < before.questions.length; i++) {
     if (i > 0) await page.locator(".answer-option").first().click()
-    if (i < 4) {
+    if (i < before.questions.length - 1) {
       await page
         .getByRole("button", { name: "Next question", exact: true })
         .click()
@@ -136,6 +136,15 @@ test("signup, autosave, reload, finalize, profile, preferences and logout", asyn
   await expect(
     page.getByRole("heading", { name: "Answer review" })
   ).toBeVisible()
+  await page
+    .getByRole("button")
+    .filter({ hasText: before.questions[0].prompt })
+    .first()
+    .click()
+  await expect(page.getByText("Further reading").first()).toBeVisible()
+  await expect(
+    page.getByRole("link", { name: /MDN|JavaScript/i }).first()
+  ).toHaveAttribute("href", /^https:\/\//)
   await page.screenshot({
     path: "test-results/connected-result.png",
     fullPage: true,
@@ -332,10 +341,29 @@ test("admin validates and imports JSON through the real API", async ({
   await page.getByRole("button", { name: "Sign in", exact: true }).click()
   await expect(page).toHaveURL(/\/assessments$/)
   await page.goto("/admin/questions/import")
-  await page.getByRole("button", { name: "Load example" }).click()
+  await page.getByRole("button", { name: "Start empty document" }).click()
   const input = page.getByLabel("Question JSON", { exact: true }),
     document = JSON.parse(await input.inputValue())
-  document.questions[0].questionKey = `browser-import-${randomUUID()}`
+  expect(document.questions).toEqual([])
+  document.questions = [
+    {
+      questionKey: `browser-import-${randomUUID()}`,
+      version: 1,
+      topicSlug: "javascript",
+      category: "TECHNICAL",
+      difficulty: "FOUNDATIONAL",
+      type: "SINGLE_CHOICE",
+      prompt: "Synthetic browser fixture: choose token A.",
+      options: [
+        { id: "a", text: "Token A", isCorrect: true },
+        { id: "b", text: "Token B", isCorrect: false },
+      ],
+      explanation: "Test-only synthetic token; not educational content.",
+      tags: ["fixture"],
+      estimatedTimeSeconds: 30,
+      status: "DRAFT",
+    },
+  ]
   await input.fill(JSON.stringify(document))
   await page.getByRole("button", { name: "Validate batch" }).click()
   await expect(page.getByText("Batch is valid. Ready to import.")).toBeVisible()
