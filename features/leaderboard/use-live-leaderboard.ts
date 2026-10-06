@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { API_URL, SESSION_EXPIRED } from "@/lib/api/client"
+import { apiOrigin, SESSION_EXPIRED } from "@/lib/api/client"
 import { useSession } from "@/features/auth/auth-boundary"
 import { privateKey } from "@/lib/api/queries"
 export function useLiveLeaderboard(onRefresh: () => void) {
@@ -9,9 +9,12 @@ export function useLiveLeaderboard(onRefresh: () => void) {
     client = useQueryClient(),
     [connected, setConnected] = useState(false)
   useEffect(() => {
-    const stream = new EventSource(`${API_URL}/api/v1/leaderboards/stream`, {
-      withCredentials: true,
-    })
+    const stream = new EventSource(
+      `${apiOrigin()}/api/v1/leaderboards/stream`,
+      {
+        withCredentials: true,
+      }
+    )
     let timer: ReturnType<typeof setTimeout> | undefined
     const refresh = () => {
       clearTimeout(timer)

@@ -29,6 +29,8 @@ export interface paths {
           content: {
             "application/json": {
               passwordReset: boolean
+              emailVerification: boolean
+              notifications: boolean
             }
           }
         }

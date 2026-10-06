@@ -1,3 +1,6 @@
+"use client"
+import { m } from "motion/react"
+import { useMotionReduced } from "./motion"
 import { Card } from "@/components/ui/card"
 import { Badge as ShadcnBadge } from "@/components/ui/badge"
 import { Avatar as ShadcnAvatar, AvatarFallback } from "@/components/ui/avatar"
@@ -5,6 +8,7 @@ import { Progress as ShadcnProgress } from "@/components/ui/progress"
 import Link from "@/components/shared/app-link"
 import { ArrowUpRight, SearchX } from "lucide-react"
 import { cn } from "@/lib/utils"
+const MotionCard = m.create(Card)
 export function PageHeader({
   eyebrow,
   title,
@@ -16,15 +20,20 @@ export function PageHeader({
   description: string
   action?: React.ReactNode
 }) {
+  const reduced = useMotionReduced()
   return (
-    <header className="page-heading">
+    <m.header
+      className="page-heading"
+      initial={reduced ? false : { opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
       <div>
         {eyebrow && <p className="eyebrow">{eyebrow}</p>}
         <h1>{title}</h1>
         <p className="muted mt-2">{description}</p>
       </div>
       {action}
-    </header>
+    </m.header>
   )
 }
 export function Panel({
@@ -34,7 +43,17 @@ export function Panel({
   children: React.ReactNode
   className?: string
 }) {
-  return <Card className={cn("panel block gap-0", className)}>{children}</Card>
+  const reduced = useMotionReduced()
+  return (
+    <MotionCard
+      className={cn("panel block gap-0", className)}
+      initial={reduced ? false : { opacity: 0, y: 6 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.05 }}
+    >
+      {children}
+    </MotionCard>
+  )
 }
 export function Badge({
   children,

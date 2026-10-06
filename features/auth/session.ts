@@ -1,12 +1,18 @@
 import { z } from "zod"
 import { queryOptions } from "@tanstack/react-query"
-import { API_URL, apiFetch, ApiError, SESSION_CHANGED } from "@/lib/api/client"
+import {
+  apiOrigin,
+  apiFetch,
+  ApiError,
+  SESSION_CHANGED,
+} from "@/lib/api/client"
 const sessionSchema = z
   .object({
     user: z.object({
       id: z.string(),
       name: z.string(),
       email: z.email(),
+      emailVerified: z.boolean().default(false),
       role: z.enum(["USER", "ADMIN"]).default("USER"),
     }),
     session: z.object({ expiresAt: z.string() }),
@@ -17,7 +23,7 @@ export const sessionOptions = queryOptions({
   queryKey: ["session"],
   queryFn: async ({ signal }) => {
     const response = await apiFetch(
-      new Request(`${API_URL}/api/auth/get-session`, { signal })
+      new Request(`${apiOrigin()}/api/auth/get-session`, { signal })
     )
     if (!response.ok)
       throw new ApiError(
@@ -36,16 +42,18 @@ export async function authenticate(
     | "sign-up/email"
     | "sign-out"
     | "request-password-reset"
-    | "reset-password",
+    | "reset-password"
+    | "send-verification-email",
   body:
     | { email: string; password: string; name?: string }
     | { email: string; redirectTo: string }
     | { token: string; newPassword: string }
+    | { email: string; callbackURL: string }
     | Record<string, never>,
   expectedUserId?: string
 ) {
   const response = await apiFetch(
-    new Request(`${API_URL}/api/auth/${action}`, {
+    new Request(`${apiOrigin()}/api/auth/${action}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -77,7 +85,7 @@ export const capabilitiesOptions = queryOptions({
   queryKey: ["capabilities"],
   queryFn: async ({ signal }) => {
     const response = await apiFetch(
-      new Request(`${API_URL}/api/capabilities`, { signal })
+      new Request(`${apiOrigin()}/api/capabilities`, { signal })
     )
     if (!response.ok)
       throw new ApiError(
@@ -85,7 +93,13 @@ export const capabilitiesOptions = queryOptions({
         response.status,
         "CAPABILITIES_FAILED"
       )
-    return z.object({ passwordReset: z.boolean() }).parse(await response.json())
+    return z
+      .object({
+        passwordReset: z.boolean(),
+        emailVerification: z.boolean().default(false),
+        notifications: z.boolean().default(false),
+      })
+      .parse(await response.json())
   },
   staleTime: 60_000,
 })

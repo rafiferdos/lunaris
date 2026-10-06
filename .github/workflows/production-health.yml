@@ -1,0 +1,48 @@
+name: Production health
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */6 * * *"
+permissions: {}
+concurrency:
+  group: production-health
+  cancel-in-progress: true
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Check the app and database connection
+        run: |
+          node --input-type=module <<'JS'
+          const endpoints = [
+            ['https://lunaris-brown.vercel.app/login', false],
+            ['https://lunaris-brown.vercel.app/api/health/ready', true],
+            ['https://lunaris-api-self.vercel.app/health/ready', true],
+          ];
+          const results = await Promise.allSettled(endpoints.map(async ([url, readiness]) => {
+            for (let attempt = 0; attempt < 2; attempt++) {
+              try {
+                const response = await fetch(url, { signal: AbortSignal.timeout(30000), cache: 'no-store' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                if (readiness && (await response.json()).data?.status !== 'ready')
+                  throw new Error('Database is not ready');
+                console.log(`Healthy: ${url}`);
+                return;
+              } catch (error) {
+                if (attempt === 1) throw new Error(`${url}: ${error.message}`);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              }
+            }
+          }));
+          for (const result of results) {
+            if (result.status === 'rejected') {
+              console.error(result.reason.message);
+              process.exitCode = 1;
+            }
+          }
+          JS

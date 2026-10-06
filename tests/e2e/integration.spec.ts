@@ -727,6 +727,8 @@ test("auth, preflight, answer controls and result meet accessibility checks", as
     "register",
     "forgot-password",
     "reset-password",
+    "verify-email",
+    "unsubscribe",
   ]) {
     await page.goto(`/${route}`)
     await expect(page.locator("main h1")).toBeVisible()
@@ -889,4 +891,42 @@ test("admin screens fit mobile and expose accessible content, settings and audit
       fullPage: true,
     })
   }
+})
+
+test("signup refreshes a cached guest session and public email controls work on mobile", async ({
+  page,
+}) => {
+  await page.goto("/profile")
+  await expect(page).toHaveURL(/\/login\?next=/)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(
+    page.getByRole("link", { name: "Need an email verification link?" })
+  ).toBeVisible()
+  await page
+    .getByRole("link", { name: "Need an email verification link?" })
+    .click()
+  await expect(
+    page.getByRole("heading", { name: "Verify your email", exact: true })
+  ).toBeVisible()
+  await expect(
+    page.getByText(
+      "Email verification is not configured. You can sign in without it."
+    )
+  ).toBeVisible()
+  await page.goto("/unsubscribe?token=invalid-test-token")
+  await expect(
+    page.getByRole("heading", { name: "Email preferences" })
+  ).toBeVisible()
+  const result = page.waitForResponse((r) =>
+    r.url().includes("/api/notifications/unsubscribe")
+  )
+  await page.getByRole("button", { name: "Unsubscribe", exact: true }).click()
+  expect((await result).status()).toBe(400)
+  await expect(page.locator("main").getByRole("alert")).toContainText(
+    "invalid or expired"
+  )
+  await register(page)
+  await expect(
+    page.getByRole("heading", { name: /Welcome back/ })
+  ).toBeVisible()
 })

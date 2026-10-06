@@ -1,7 +1,11 @@
 import { writeFile, rename } from "node:fs/promises"
 import { format, resolveConfig } from "prettier"
 const origin = new URL(
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"
+  process.env.API_SCHEMA_URL ??
+    (process.env.NEXT_PUBLIC_API_URL === "same-origin"
+      ? process.env.API_UPSTREAM
+      : process.env.NEXT_PUBLIC_API_URL) ??
+    "http://localhost:4000"
 )
 const response = await fetch(new URL("/openapi.json", origin), {
   signal: AbortSignal.timeout(15000),

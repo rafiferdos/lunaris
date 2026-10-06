@@ -14,6 +14,9 @@ import { PageHeader, Panel, Select } from "@/components/shared/ui"
 import { Button } from "@/components/ui/button"
 import { PageEntrance } from "@/components/shared/motion"
 import { useHydrated } from "@/lib/local-store"
+import { useQuery } from "@tanstack/react-query"
+import { capabilitiesOptions } from "@/features/auth/session"
+import { useSession } from "@/features/auth/auth-boundary"
 import {
   usePreferences,
   useUpdatePreferences,
@@ -29,6 +32,8 @@ const palettes = [
   { name: "rose", label: "Rose", swatch: "oklch(.58 .22 17)" },
 ] as const
 export function SettingsPage() {
+  const capabilities = useQuery(capabilitiesOptions)
+  const { user } = useSession()
   const preferences = usePreferences()
   const { theme } = useTheme()
   const mutation = useUpdatePreferences()
@@ -224,18 +229,43 @@ export function SettingsPage() {
             <h2>Notifications</h2>
             <SettingToggle
               label="Progress summaries"
-              description="Unavailable until scheduled email summaries are enabled."
-              disabled
+              description={
+                capabilities.data?.notifications
+                  ? "Your previous week's completed assessments, once a week by email. Turn off anytime."
+                  : "Available once email delivery is configured by your administrator."
+              }
+              disabled={
+                !capabilities.data?.notifications ||
+                mutation.isPending ||
+                !user.emailVerified
+              }
               checked={preferences.email}
               onChange={(value) => update({ email: value })}
             />
             <SettingToggle
               label="Practice reminders"
-              description="Unavailable until scheduled reminders are enabled."
-              disabled
+              description={
+                capabilities.data?.notifications
+                  ? "A gentle email after three inactive days, at most once a week."
+                  : "Available once email delivery is configured by your administrator."
+              }
+              disabled={
+                !capabilities.data?.notifications ||
+                mutation.isPending ||
+                !user.emailVerified
+              }
               checked={preferences.reminders}
               onChange={(value) => update({ reminders: value })}
             />
+            {capabilities.data?.notifications && !user.emailVerified && (
+              <p className="muted text-sm">
+                Verify your email before opting in.{" "}
+                <Link href="/verify-email" className="text-link">
+                  Request verification
+                </Link>
+              </p>
+            )}
+            <MutationError error={capabilities.error} />
           </Panel>
           <Panel>
             <h2>Privacy & account</h2>

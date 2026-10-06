@@ -30,7 +30,7 @@ export function AuthForm({
   const client = useQueryClient()
   const capabilities = useQuery({
     ...capabilitiesOptions,
-    enabled: mode === "forgot-password",
+    enabled: mode === "forgot-password" || mode === "register",
   })
   const mutation = useMutation({
     mutationFn: (body: { email: string; password: string; name?: string }) =>
@@ -43,12 +43,27 @@ export function AuthForm({
             mode === "register" ? "sign-up/email" : "sign-in/email",
             body
           ),
-    onSuccess: async () => {
+    onSuccess: async (_result, submitted) => {
       if (mode === "forgot-password") {
         setMessage(
           "If an account exists for that email, you will receive a password reset link shortly."
         )
         return
+      }
+      if (mode === "register") {
+        const session = await client.fetchQuery({
+          ...sessionOptions,
+          staleTime: 0,
+        })
+        if (
+          !session ||
+          session.user.email.toLowerCase() !== submitted.email.toLowerCase()
+        ) {
+          setMessage(
+            "Check your email to verify your account, then sign in. You can request another link from the sign-in page."
+          )
+          return
+        }
       }
       announceSession("changed")
       await client.cancelQueries()
@@ -240,6 +255,13 @@ export function AuthForm({
               </>
             )}
           </p>
+          {!register && !forgot && (
+            <p className="mt-3 text-center text-xs">
+              <Link href="/verify-email" className="text-link">
+                Need an email verification link?
+              </Link>
+            </p>
+          )}
         </div>
       </main>
     </div>

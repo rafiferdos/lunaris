@@ -14,7 +14,7 @@ pnpm dev
 
 Open http://localhost:3000. `/` opens the authenticated assessment workspace; unauthenticated users go to login. Register a real development account, or use the backend's seeded accounts and configured seed password. Signup and login send credentials to Better Auth over the configured API connection; passwords and session tokens are never stored in browser storage.
 
-`NEXT_PUBLIC_API_URL` is an origin, defaults to `http://localhost:4000`, and is embedded by Next.js at build time. Set it before a production build. Serve both apps over HTTPS on same-site hosts, for example `app.example.com` and `api.example.com`, and configure the backend's exact trusted frontend origin. Browser calls include cookies. Client route guards are presentation controls; backend session, role and ownership checks remain the security boundary.
+`NEXT_PUBLIC_API_URL` accepts an origin or `same-origin` for the frontend API proxy, and defaults to `http://localhost:4000`, and is embedded by Next.js at build time. Set it before a production build. Serve both apps over HTTPS on same-site hosts, for example `app.example.com` and `api.example.com`, and configure the backend's exact trusted frontend origin. Browser calls include cookies. Client route guards are presentation controls; backend session, role and ownership checks remain the security boundary.
 
 ## Organization
 
@@ -77,7 +77,7 @@ The build retains the preset's Google Fonts and needs access to Google Fonts on 
 
 ## Account recovery and deployment
 
-GET `/api/capabilities` declares password-reset availability. With the backend's paired `RESEND_API_KEY` and verified `EMAIL_FROM`, the recovery form sends a one-time email link and `/reset-password` changes the password, revoking existing sessions. Without delivery configuration the UI shows recovery information. Real provider delivery still needs validation on the deployment. Scheduled summaries/reminders are explicitly disabled until a delivery worker is implemented.
+GET `/api/capabilities` declares password-reset availability. With the backend's paired `RESEND_API_KEY` and verified `EMAIL_FROM`, the recovery form sends a one-time email link and `/reset-password` changes the password, revoking existing sessions. Without delivery configuration the UI shows recovery information. Real provider delivery still needs validation on the deployment. Native email verification and durable, opt-in weekly summaries/inactivity reminders are implemented in the API. Capabilities hide unavailable delivery controls until the provider is configured. Gmail SMTP is supported without a purchased domain, using a user-created App Password saved directly in Vercel.
 
 Build the non-root standalone image with the browser-accessible API origin:
 
@@ -87,4 +87,12 @@ docker build --build-arg NEXT_PUBLIC_API_URL=https://api.example.com -t lunaris:
 
 The image includes static assets and the local speech model. CI verifies lint/types/unit tests, formatting, generated-contract drift, production dependency audit and build. It does not start the sibling backend or execute the cross-repository browser suite; run that suite in staging/release validation.
 
-See [production readiness and release checks](docs/production-readiness.md) for the audit evidence, current limits and external launch requirements. The demonstration question bank has only 25 questions across five playable topics; populate/calibrate additional content for a broad catalog launch. The backend now automatically finalizes expired attempts every minute; no external expiry cron is required. HTTPS/origins/secrets, provider delivery, backup restoration, monitoring and deployment-specific smoke/load tests remain deployment work. Preserve non-buffered SSE connections through the reverse proxy.
+See [production readiness and release checks](docs/production-readiness.md) for the audit evidence, current limits and external launch requirements. The production release imports 285 questions across all 26 catalog topics; all default modes have sufficient difficulty coverage. Content still needs independent subject-matter review and calibration before high-stakes use. The backend now automatically finalizes expired attempts every minute; no external expiry cron is required. HTTPS/origins/secrets, provider delivery, backup restoration, monitoring and deployment-specific smoke/load tests remain deployment work. Preserve non-buffered SSE connections through the reverse proxy.
+
+## Vercel production
+
+Set `NEXT_PUBLIC_API_URL=same-origin`, `API_UPSTREAM` to the canonical deployed API origin, and `ENABLE_EXPERIMENTAL_COREPACK=1`. Both projects use Node 24/pnpm 12 and Singapore functions. Configure the API's FRONTEND_ORIGIN and BETTER_AUTH_URL to the exact public app origin; the browser reaches native auth and domain endpoints through /api/*, keeping secure HttpOnly cookies on the app host. The proxy readiness URL is /api/health/ready. Avoid attaching the production database to preview deployments.
+
+Motion uses asynchronous LazyMotion features and short, once-visible transitions. System reduced-motion and the user's preference disable movement. Shared panels, page headings and discovery cards retain shadcn primitives; no continuous background animations or large animation library bundle is loaded eagerly.
+
+The public GitHub repository includes a free standard-runner production health workflow, scheduled every six hours and runnable manually. It checks the login page, proxy database readiness and API database readiness without credentials, mutations or test accounts. Failed runs appear in Actions; email notification behavior follows the owner's GitHub notification settings.

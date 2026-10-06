@@ -10,7 +10,7 @@ export const preferenceSchema = z.object({
   reducedMotion: z.boolean().default(false),
   difficulty: z.enum(["easy", "medium", "competitive"]).default("easy"),
   timer: z.boolean().default(true),
-  email: z.boolean().default(true),
+  email: z.boolean().default(false),
   reminders: z.boolean().default(false),
   publicProfile: z.boolean().default(true),
   topics: z.array(z.string()).default([]),

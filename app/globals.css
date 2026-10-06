@@ -462,7 +462,7 @@ svg {
   min-width: 0;
 }
 .assessment-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   border-color: var(--ring);
   box-shadow: 0 6px 18px #00000006;
 }
@@ -523,11 +523,11 @@ svg {
   letter-spacing: -0.4px;
 }
 .card-description {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.75;
   color: var(--muted-foreground);
-  margin-top: 7px;
-  min-height: 40px;
+  margin-top: 8px;
+  min-height: 44px;
 }
 .card-meta {
   display: flex;
@@ -868,6 +868,7 @@ tr:last-child td {
   gap: 22px;
 }
 .field {
+  align-items: stretch;
   display: flex;
   flex-direction: column;
   gap: 7px;
@@ -1616,4 +1617,94 @@ tr:last-child td {
 [data-slot="toggle"]:is([data-pressed], [aria-pressed="true"]) {
   background: var(--accent);
   color: var(--accent-foreground);
+}
+
+/* Token-based surfaces keep every palette and contrast mode consistent. */
+.assessment-surface {
+  border-radius: calc(var(--radius) * 1.4);
+  overflow: hidden;
+}
+.assessment-card {
+  border: 0;
+  border-radius: inherit;
+  box-shadow: none;
+}
+.assessment-card:focus-visible {
+  outline-offset: -3px;
+}
+.reveal-item {
+  min-width: 0;
+  height: 100%;
+}
+.overview-strip {
+  background: linear-gradient(
+    115deg,
+    var(--card),
+    color-mix(in oklch, var(--muted) 45%, var(--card))
+  );
+}
+.overview-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+.panel {
+  box-shadow: 0 2px 10px color-mix(in oklch, var(--foreground) 3%, transparent);
+}
+.metric-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+.auth-art {
+  position: relative;
+  isolation: isolate;
+  background: radial-gradient(
+    ellipse at 20% 25%,
+    color-mix(in oklch, var(--primary) 5%, var(--sidebar)),
+    var(--sidebar) 70%
+  );
+}
+.auth-art::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.4;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: linear-gradient(transparent, black, transparent);
+  pointer-events: none;
+}
+.text-link svg,
+.card-arrow {
+  transition: transform 160ms ease-out;
+}
+.text-link:hover svg,
+.assessment-card:hover .card-arrow {
+  transform: translate(2px, -2px);
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  html:not([data-reduced-motion="true"]) .assessment-card:active {
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .assessment-card:hover,
+  .text-link:hover svg,
+  .assessment-card:hover .card-arrow {
+    transform: none;
+  }
+}
+[data-reduced-motion="true"] .assessment-card:hover,
+[data-reduced-motion="true"] .text-link:hover svg,
+[data-reduced-motion="true"] .assessment-card:hover .card-arrow {
+  transform: none;
 }

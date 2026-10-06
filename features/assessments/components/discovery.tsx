@@ -30,7 +30,7 @@ import {
   Select,
   TextLink,
 } from "@/components/shared/ui"
-import { PageEntrance } from "@/components/shared/motion"
+import { PageEntrance, Reveal } from "@/components/shared/motion"
 import { Button } from "@/components/ui/button"
 import { useUrlFilters } from "@/hooks/use-url-filters"
 import {
@@ -308,15 +308,16 @@ function DiscoveryContent({
             </CollapsibleContent>
           </Collapsible>
           <div className="assessment-grid">
-            {visible.map((topic) => (
-              <AssessmentCard
-                key={topic.slug}
-                topic={topic}
-                attempts={
-                  assessments.find((a) => a.slug === topic.slug)?.progress
-                    ?.assessmentCount ?? 0
-                }
-              />
+            {visible.map((topic, index) => (
+              <Reveal key={topic.slug} index={index}>
+                <AssessmentCard
+                  topic={topic}
+                  attempts={
+                    assessments.find((a) => a.slug === topic.slug)?.progress
+                      ?.assessmentCount ?? 0
+                  }
+                />
+              </Reveal>
             ))}
           </div>
           {!visible.length && (

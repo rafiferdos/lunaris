@@ -2,7 +2,9 @@ import createClient from "openapi-fetch"
 import type { paths } from "./schema"
 
 const configured = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"
-const origin = new URL(configured)
+const origin = new URL(
+  configured === "same-origin" ? "http://localhost:3000" : configured
+)
 if (
   !["http:", "https:"].includes(origin.protocol) ||
   origin.pathname !== "/" ||
@@ -13,6 +15,11 @@ if (
 )
   throw new Error("NEXT_PUBLIC_API_URL must be an HTTP(S) origin.")
 export const API_URL = origin.origin
+export function apiOrigin() {
+  return configured === "same-origin" && typeof window !== "undefined"
+    ? window.location.origin
+    : API_URL
+}
 export const SESSION_EXPIRED = "lunaris:session-expired"
 export const SESSION_CHANGED = "lunaris:session-changed"
 
@@ -49,7 +56,7 @@ export async function apiFetch(request: Request) {
 }
 export function apiFor(userId: string) {
   return createClient<paths>({
-    baseUrl: API_URL,
+    baseUrl: apiOrigin(),
     credentials: "include",
     headers: { "X-Lunaris-User": userId },
     fetch: apiFetch,

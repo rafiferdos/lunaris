@@ -10,6 +10,7 @@ import { ApiError, SESSION_EXPIRED, SESSION_CHANGED } from "@/lib/api/client"
 import { sessionOptions } from "@/features/auth/session"
 import { SESSION_CHANNEL } from "@/features/auth/session-events"
 import { NavigationGuardProvider } from "@/components/shared/navigation-guard"
+import { MotionProvider } from "@/components/shared/motion"
 let browserClient: QueryClient | undefined
 function getClient() {
   if (typeof window === "undefined") return createClient()
@@ -87,7 +88,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={getClient()}>
       <SessionEvents />
-      <NavigationGuardProvider>{children}</NavigationGuardProvider>
+      <MotionProvider>
+        <NavigationGuardProvider>{children}</NavigationGuardProvider>
+      </MotionProvider>
     </QueryClientProvider>
   )
 }
